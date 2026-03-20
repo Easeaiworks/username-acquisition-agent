@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.so
 *.egg-info/
-dist/
 build/
 .eggs/
 *.egg
@@ -41,7 +40,6 @@ logs/
 
 # Dashboard build
 dashboard/node_modules/
-dashboard/dist/
 dashboard/.env
 
 # Misc

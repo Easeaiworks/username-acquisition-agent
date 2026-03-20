@@ -1,18 +1,8 @@
 # =============================================================================
-# Sean Lead Agent — Multi-stage Production Dockerfile
-# Builds React dashboard + Python FastAPI backend
+# Sean Lead Agent — Production Dockerfile
+# Single-stage Python build with pre-built React dashboard
 # =============================================================================
 
-# --- Stage 1: Build the React dashboard ---
-FROM node:20-slim AS frontend-build
-
-WORKDIR /app/dashboard
-COPY dashboard/package.json dashboard/package-lock.json* ./
-RUN npm ci
-COPY dashboard/ ./
-RUN npm run build
-
-# --- Stage 2: Python production image ---
 FROM python:3.11-slim
 
 # Security: run as non-root
@@ -27,8 +17,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ ./app/
 
-# Copy built dashboard from Stage 1
-COPY --from=frontend-build /app/dashboard/dist ./dashboard/dist
+# Copy pre-built dashboard assets
+COPY dashboard/dist ./dashboard/dist
 
 # Switch to non-root user
 USER agent

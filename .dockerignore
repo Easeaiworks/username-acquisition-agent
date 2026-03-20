@@ -7,7 +7,7 @@ __pycache__
 .vscode
 node_modules
 dashboard/node_modules
-dashboard/dist
+dashboard/src
 tests/
 *.md
 .pytest_cache
