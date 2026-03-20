@@ -2,6 +2,9 @@
 Company API routes — CRUD operations and pipeline management.
 """
 
+import re
+from enum import Enum
+
 from fastapi import APIRouter, HTTPException, UploadFile, File, Query
 from typing import Optional
 from datetime import datetime
@@ -21,6 +24,16 @@ import structlog
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/api/companies", tags=["companies"])
+
+# Whitelist of allowed sort columns to prevent ORM injection
+ALLOWED_SORT_FIELDS = frozenset({
+    "brand_name", "domain", "industry", "created_at", "updated_at",
+    "total_opportunity_score", "composite_score", "pipeline_stage",
+    "priority_bucket", "employee_range",
+})
+
+# Max CSV upload size (10 MB)
+MAX_CSV_BYTES = 10 * 1024 * 1024
 
 
 @router.get("/", response_model=CompanyListResponse)
@@ -47,8 +60,14 @@ async def list_companies(
     if min_score is not None:
         query = query.gte("total_opportunity_score", min_score)
     if search:
-        query = query.or_(f"brand_name.ilike.%{search}%,domain.ilike.%{search}%,legal_name.ilike.%{search}%")
+        # Sanitize search input — strip special chars that could break PostgREST filters
+        sanitized = re.sub(r'[^\w\s\-\.]', '', search).strip()[:100]
+        if sanitized:
+            query = query.or_(f"brand_name.ilike.%{sanitized}%,domain.ilike.%{sanitized}%,legal_name.ilike.%{sanitized}%")
 
+    # Validate sort field against whitelist
+    if sort_by not in ALLOWED_SORT_FIELDS:
+        sort_by = "total_opportunity_score"
     query = query.order(sort_by, desc=sort_desc)
     query = query.range(offset, offset + page_size - 1)
 
@@ -163,15 +182,30 @@ async def reject_for_outreach(company_id: str):
 @router.post("/import/csv")
 async def import_csv(file: UploadFile = File(...)):
     """Import companies from a CSV file upload."""
-    if not file.filename.endswith(".csv"):
+    if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="File must be a CSV")
 
+    # Validate content type
+    if file.content_type and file.content_type not in ("text/csv", "application/csv", "text/plain"):
+        raise HTTPException(status_code=400, detail="Invalid content type — expected CSV")
+
     content = await file.read()
-    csv_content = content.decode("utf-8")
+
+    # Enforce size limit
+    if len(content) > MAX_CSV_BYTES:
+        raise HTTPException(status_code=413, detail=f"File too large. Max {MAX_CSV_BYTES // (1024*1024)} MB")
+
+    try:
+        csv_content = content.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="File must be UTF-8 encoded")
+
+    # Sanitize filename for logging
+    safe_filename = re.sub(r'[^\w\-\.]', '_', file.filename)[:100]
 
     stats = await import_companies_from_csv(
         csv_content=csv_content,
-        source=f"csv_upload:{file.filename}",
+        source=f"csv_upload:{safe_filename}",
     )
 
     return stats

@@ -68,6 +68,13 @@ class Settings(BaseSettings):
     sender_name: str = Field(default="Sean", alias="SENDER_NAME")
     physical_address: Optional[str] = Field(default=None, alias="PHYSICAL_ADDRESS")
 
+    # --- Security ---
+    dashboard_api_key: Optional[str] = Field(default=None, alias="DASHBOARD_API_KEY")
+    require_auth: bool = Field(default=False, alias="REQUIRE_AUTH")
+    allowed_origins: Optional[str] = Field(default=None, alias="ALLOWED_ORIGINS")
+    api_rate_limit: int = Field(default=60, alias="API_RATE_LIMIT")
+    max_upload_size_mb: int = Field(default=10, alias="MAX_UPLOAD_SIZE_MB")
+
     # --- Scoring Weights ---
     weight_brand_value: float = 0.35
     weight_handle_pain: float = 0.30
