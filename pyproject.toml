@@ -1,0 +1,9 @@
+[project]
+name = "sean-lead-agent"
+version = "1.0.0"
+description = "Username Acquisition & Corporate Outreach System"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
