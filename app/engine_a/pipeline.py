@@ -28,6 +28,7 @@ from app.database import get_service_client
 from app.engine_a.company_discovery import get_companies_for_scanning
 from app.engine_a.handle_scanner import scan_batch
 from app.engine_a.scoring import score_batch, get_scoring_summary
+from app.engine_b.enrichment import enrich_batch
 from app.models.platform_handle import Platform
 
 logger = structlog.get_logger()
@@ -198,12 +199,73 @@ async def run_tier2_scoring(limit: int = 500) -> dict:
     return summary
 
 
+async def run_tier3_enrichment(
+    min_score: float = 0.5,
+    limit: int = 100,
+) -> dict:
+    """
+    Run Tier 3 enrichment on scored companies above the threshold.
+
+    Fetches companies in the 'scored' stage with high enough scores
+    and enriches contacts via RocketReach + Hunter.io.
+
+    Args:
+        min_score: Minimum total_opportunity_score to qualify
+        limit: Max companies to enrich
+
+    Returns:
+        Enrichment run summary dict
+    """
+    start_time = datetime.now(timezone.utc)
+
+    logger.info("tier3_enrichment_starting", min_score=min_score, limit=limit)
+
+    try:
+        db = get_service_client()
+        result = (
+            db.table("companies")
+            .select("*")
+            .eq("pipeline_stage", "scored")
+            .gte("total_opportunity_score", min_score)
+            .order("total_opportunity_score", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        companies = result.data
+    except Exception as e:
+        logger.error("tier3_fetch_error", error=str(e))
+        return {"status": "error", "error": str(e)}
+
+    if not companies:
+        logger.info("tier3_no_companies_to_enrich")
+        return {"status": "completed", "companies_enriched": 0}
+
+    enriched_results = await enrich_batch(companies, concurrency=3)
+
+    elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
+
+    total_contacts = sum(r.get("contacts_saved", 0) for r in enriched_results)
+
+    summary = {
+        "status": "completed",
+        "companies_available": len(companies),
+        "companies_enriched": len(enriched_results),
+        "total_contacts_found": total_contacts,
+        "duration_secs": round(elapsed, 2),
+    }
+
+    logger.info("tier3_enrichment_complete", **summary)
+    await _record_pipeline_run("tier3_enrichment", summary)
+
+    return summary
+
+
 async def run_daily_pipeline() -> dict:
     """
-    Run the full daily pipeline: Tier 1 scan → Tier 2 scoring.
+    Run the full daily pipeline: Tier 1 scan → Tier 2 scoring → Tier 3 enrichment.
 
     This is the main entry point called by the APScheduler cron job.
-    Future phases will add enrichment and outreach steps.
+    Future phases will add outreach steps.
 
     Returns:
         Combined pipeline run summary
@@ -217,12 +279,18 @@ async def run_daily_pipeline() -> dict:
     # Step 2: Score all scanned companies
     score_result = await run_tier2_scoring()
 
+    # Step 3: Enrich contacts for high-scoring companies
+    enrich_result = await run_tier3_enrichment(
+        min_score=settings.approval_queue_threshold,
+    )
+
     elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
 
     summary = {
         "status": "completed",
         "scan": scan_result,
         "scoring": score_result,
+        "enrichment": enrich_result,
         "total_duration_secs": round(elapsed, 2),
     }
 
