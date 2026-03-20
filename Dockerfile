@@ -26,8 +26,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY app/ ./app/
-COPY alembic/ ./alembic/ 2>/dev/null || true
-COPY alembic.ini ./alembic.ini 2>/dev/null || true
 
 # Copy built dashboard from Stage 1
 COPY --from=frontend-build /app/dashboard/dist ./dashboard/dist
