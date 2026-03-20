@@ -27,6 +27,7 @@ from app.config import settings
 from app.database import get_service_client
 from app.engine_a.company_discovery import get_companies_for_scanning
 from app.engine_a.handle_scanner import scan_batch
+from app.engine_a.scoring import score_batch, get_scoring_summary
 from app.models.platform_handle import Platform
 
 logger = structlog.get_logger()
@@ -132,6 +133,101 @@ async def run_tier1_scan(
 
     # Store pipeline run metadata
     await _record_pipeline_run("tier1_scan", summary)
+
+    return summary
+
+
+async def run_tier2_scoring(limit: int = 500) -> dict:
+    """
+    Run Tier 2 scoring on all scanned companies.
+
+    Fetches companies in the 'scanned' stage and runs the weighted
+    scoring model on each. Results are persisted and companies advance
+    to the 'scored' stage.
+
+    Args:
+        limit: Max companies to score
+
+    Returns:
+        Scoring run summary dict
+    """
+    start_time = datetime.now(timezone.utc)
+
+    logger.info("tier2_scoring_starting", limit=limit)
+
+    try:
+        db = get_service_client()
+        result = (
+            db.table("companies")
+            .select("*")
+            .eq("pipeline_stage", "scanned")
+            .order("created_at", desc=False)
+            .limit(limit)
+            .execute()
+        )
+        companies = result.data
+    except Exception as e:
+        logger.error("tier2_fetch_error", error=str(e))
+        return {"status": "error", "error": str(e)}
+
+    if not companies:
+        logger.info("tier2_no_companies_to_score")
+        return {"status": "completed", "companies_scored": 0}
+
+    scored_results = await score_batch(companies, concurrency=10)
+
+    elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
+
+    # Classify results by bucket
+    bucket_counts = {}
+    for r in scored_results:
+        bucket = r.get("priority_bucket", "unknown")
+        bucket_counts[bucket] = bucket_counts.get(bucket, 0) + 1
+
+    summary = {
+        "status": "completed",
+        "companies_available": len(companies),
+        "companies_scored": len(scored_results),
+        "bucket_distribution": bucket_counts,
+        "duration_secs": round(elapsed, 2),
+    }
+
+    logger.info("tier2_scoring_complete", **summary)
+    await _record_pipeline_run("tier2_scoring", summary)
+
+    return summary
+
+
+async def run_daily_pipeline() -> dict:
+    """
+    Run the full daily pipeline: Tier 1 scan → Tier 2 scoring.
+
+    This is the main entry point called by the APScheduler cron job.
+    Future phases will add enrichment and outreach steps.
+
+    Returns:
+        Combined pipeline run summary
+    """
+    logger.info("daily_pipeline_starting")
+    start_time = datetime.now(timezone.utc)
+
+    # Step 1: Scan new companies
+    scan_result = await run_tier1_scan()
+
+    # Step 2: Score all scanned companies
+    score_result = await run_tier2_scoring()
+
+    elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
+
+    summary = {
+        "status": "completed",
+        "scan": scan_result,
+        "scoring": score_result,
+        "total_duration_secs": round(elapsed, 2),
+    }
+
+    logger.info("daily_pipeline_complete", duration_secs=round(elapsed, 2))
+    await _record_pipeline_run("daily_pipeline", summary)
 
     return summary
 

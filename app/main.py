@@ -12,6 +12,7 @@ from app.config import settings
 from app.utils.logging import setup_logging
 from app.api.companies import router as companies_router
 from app.api.dashboard import router as dashboard_router
+from app.api.scoring import router as scoring_router
 
 import structlog
 
@@ -63,6 +64,7 @@ app.add_middleware(
 # Register API routes
 app.include_router(companies_router)
 app.include_router(dashboard_router)
+app.include_router(scoring_router)
 
 
 @app.get("/health")
