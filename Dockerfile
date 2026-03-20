@@ -8,7 +8,7 @@ FROM node:20-slim AS frontend-build
 
 WORKDIR /app/dashboard
 COPY dashboard/package.json dashboard/package-lock.json* ./
-RUN npm ci --production=false
+RUN npm ci
 COPY dashboard/ ./
 RUN npm run build
 
