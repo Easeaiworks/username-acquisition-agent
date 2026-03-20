@@ -55,3 +55,11 @@ export const getPendingOutreach = (page = 1) => request(`/api/outreach/queue/pen
 export const approveOutreach = (id) => request(`/api/outreach/${id}/approve`, { method: 'POST' });
 export const rejectOutreach = (id) => request(`/api/outreach/${id}/reject`, { method: 'POST' });
 export const getCompanyOutreach = (id) => request(`/api/outreach/company/${id}`);
+
+// Reports
+export const generateReport = () => request('/api/reports/generate', { method: 'POST' });
+export const getTodayReport = () => request('/api/reports/today');
+export const getLatestReport = () => request('/api/reports/latest');
+export const getReportHistory = (days = 30) => request(`/api/reports/history?days=${days}`);
+export const getReportTrends = (days = 14) => request(`/api/reports/trends?days=${days}`);
+export const getReportByDate = (date) => request(`/api/reports/${date}`);

@@ -7,7 +7,7 @@ Runs via APScheduler on Railway. The daily cycle:
 3. Auto-enrichment for top leads (Tier 3)
 4. Auto-outreach for Critical/Very High leads
 5. Follow-up processing for active sequences
-6. Daily report generation (Phase 7 — TODO)
+6. Daily report generation and persistence
 """
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -47,7 +47,12 @@ async def run_daily_pipeline_job():
 
         # Step 6: Generate daily report
         logger.info("daily_phase_6_report")
-        # TODO: Implement in Phase 7
+        from app.reporting.formatter import generate_and_persist_report
+        report_result = await generate_and_persist_report()
+        logger.info(
+            "daily_report_generated",
+            date=report_result["report"]["report_date"],
+        )
 
         elapsed = (datetime.utcnow() - start_time).total_seconds()
         logger.info(

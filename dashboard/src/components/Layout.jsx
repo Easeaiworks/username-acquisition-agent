@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Building2, Target, Mail, CheckSquare, BarChart3, Settings, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Building2, Target, Mail, CheckSquare, BarChart3, FileText, Menu, X } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { id: 'companies', label: 'Companies', icon: Building2 },
   { id: 'outreach', label: 'Outreach', icon: Mail },
   { id: 'approvals', label: 'Approvals', icon: CheckSquare },
+  { id: 'reports', label: 'Reports', icon: FileText },
 ];
 
 export default function Layout({ currentPage, onNavigate, children }) {
