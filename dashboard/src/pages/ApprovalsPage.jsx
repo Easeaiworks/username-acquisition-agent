@@ -19,17 +19,17 @@ function ApprovalCard({ item, type, onAction }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="glass-card rounded-xl overflow-hidden">
       <div className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h4 className="font-medium text-gray-900 truncate">
+              <h4 className="font-medium truncate" style={{ color: '#1b2a4a' }}>
                 {item.brand_name || item.company_name || 'Unknown'}
               </h4>
               {item.priority_bucket && <PriorityBadge priority={item.priority_bucket} />}
             </div>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm mt-0.5" style={{ color: '#6b7a99' }}>
               {type === 'company'
                 ? `Score: ${item.composite_score?.toFixed(2) || '—'} · ${item.industry || 'Unknown industry'}`
                 : `To: ${item.contact_name || '—'} · Step ${item.sequence_step || 1}/4`}
@@ -40,7 +40,8 @@ function ApprovalCard({ item, type, onAction }) {
             <button
               onClick={() => handleAction('approve')}
               disabled={loading !== null}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg text-white disabled:opacity-50 transition-all duration-200"
+              style={{ background: 'linear-gradient(135deg, #059669, #047857)', boxShadow: '0 2px 6px rgba(5,150,105,0.25)' }}
             >
               {loading === 'approve' ? (
                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
@@ -52,7 +53,8 @@ function ApprovalCard({ item, type, onAction }) {
             <button
               onClick={() => handleAction('reject')}
               disabled={loading !== null}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg disabled:opacity-50 transition-all duration-200"
+              style={{ border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', background: 'rgba(254,226,226,0.4)' }}
             >
               {loading === 'reject' ? (
                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600" />
@@ -63,7 +65,10 @@ function ApprovalCard({ item, type, onAction }) {
             </button>
             <button
               onClick={() => setExpanded(!expanded)}
-              className="p-1.5 text-gray-400 hover:text-gray-600 rounded"
+              className="p-1.5 rounded transition-colors"
+              style={{ color: '#9aa5bd' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#374a6d'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = '#9aa5bd'; }}
             >
               {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
@@ -72,43 +77,36 @@ function ApprovalCard({ item, type, onAction }) {
       </div>
 
       {expanded && (
-        <div className="px-4 pb-4 border-t border-gray-100 pt-3">
+        <div className="px-4 pb-4 pt-3" style={{ borderTop: '1px solid rgba(91,126,194,0.08)' }}>
           {type === 'company' ? (
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-gray-500 text-xs">Domain</p>
-                <p className="text-gray-900">{item.domain || '—'}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-xs">Size</p>
-                <p className="text-gray-900">{item.employee_range || '—'}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-xs">Brand Value</p>
-                <p className="text-gray-900">{item.brand_value_score?.toFixed(2) || '—'}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-xs">Handle Pain</p>
-                <p className="text-gray-900">{item.handle_pain_score?.toFixed(2) || '—'}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-xs">Urgency</p>
-                <p className="text-gray-900">{item.urgency_score?.toFixed(2) || '—'}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-xs">Reachability</p>
-                <p className="text-gray-900">{item.reachability_score?.toFixed(2) || '—'}</p>
-              </div>
+              {[
+                ['Domain', item.domain],
+                ['Size', item.employee_range],
+                ['Brand Value', item.brand_value_score?.toFixed(2)],
+                ['Handle Pain', item.handle_pain_score?.toFixed(2)],
+                ['Urgency', item.urgency_score?.toFixed(2)],
+                ['Reachability', item.reachability_score?.toFixed(2)],
+              ].map(([label, val]) => (
+                <div key={label}>
+                  <p className="text-xs" style={{ color: '#6b7a99' }}>{label}</p>
+                  <p style={{ color: '#1b2a4a' }}>{val || '—'}</p>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="space-y-3 text-sm">
               <div>
-                <p className="text-gray-500 text-xs">Subject</p>
-                <p className="text-gray-900">{item.subject || '—'}</p>
+                <p className="text-xs" style={{ color: '#6b7a99' }}>Subject</p>
+                <p style={{ color: '#1b2a4a' }}>{item.subject || '—'}</p>
               </div>
               <div>
-                <p className="text-gray-500 text-xs">Preview</p>
-                <p className="text-gray-700 whitespace-pre-line text-xs leading-relaxed bg-gray-50 rounded p-3">
+                <p className="text-xs" style={{ color: '#6b7a99' }}>Preview</p>
+                <p className="whitespace-pre-line text-xs leading-relaxed rounded p-3" style={{
+                  color: '#374a6d',
+                  background: 'rgba(238,241,248,0.6)',
+                  border: '1px solid rgba(91,126,194,0.06)',
+                }}>
                   {item.body_preview || item.body || 'No preview available'}
                 </p>
               </div>
@@ -160,14 +158,14 @@ export default function ApprovalsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Approvals</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-xl font-bold" style={{ color: '#1b2a4a' }}>Approvals</h2>
+        <p className="text-sm mt-1" style={{ color: '#6b7a99' }}>
           {totalPending > 0 ? `${totalPending} items need your review` : 'All caught up — no pending approvals'}
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 rounded-lg p-1 w-fit" style={{ background: 'rgba(238,241,248,0.8)', border: '1px solid rgba(91,126,194,0.08)' }}>
         {[
           { id: 'companies', label: 'Companies', count: queue.companies.length },
           { id: 'outreach', label: 'Outreach', count: queue.outreach.length },
@@ -175,15 +173,21 @@ export default function ApprovalsPage() {
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              tab === id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className="px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200"
+            style={tab === id
+              ? { background: 'rgba(255,255,255,0.95)', color: '#1b2a4a', boxShadow: '0 2px 8px rgba(15,26,46,0.06)' }
+              : { color: '#6b7a99' }
+            }
           >
             {label}
             {count > 0 && (
-              <span className={`ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs ${
-                tab === id ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'
-              }`}>
+              <span
+                className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs"
+                style={tab === id
+                  ? { background: 'rgba(58,82,137,0.1)', color: '#3a5289' }
+                  : { background: 'rgba(154,165,189,0.2)', color: '#6b7a99' }
+                }
+              >
                 {count}
               </span>
             )}
@@ -193,13 +197,13 @@ export default function ApprovalsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <div className="animate-spin rounded-full h-8 w-8 border-2 spinner-navy" />
         </div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <CheckCircle2 size={40} className="mx-auto text-green-400 mb-3" />
-          <p className="text-gray-600 font-medium">No pending {tab} approvals</p>
-          <p className="text-sm text-gray-400 mt-1">New items will appear here when the pipeline runs</p>
+        <div className="glass-card rounded-xl p-12 text-center">
+          <CheckCircle2 size={40} className="mx-auto mb-3" style={{ color: '#34d399' }} />
+          <p className="font-medium" style={{ color: '#374a6d' }}>No pending {tab} approvals</p>
+          <p className="text-sm mt-1" style={{ color: '#9aa5bd' }}>New items will appear here when the pipeline runs</p>
         </div>
       ) : (
         <div className="space-y-3">

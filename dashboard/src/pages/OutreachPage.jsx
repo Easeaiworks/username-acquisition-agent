@@ -14,6 +14,13 @@ const STATUS_COLORS = {
   meeting_booked: 'purple',
 };
 
+const chartTooltipStyle = {
+  background: 'rgba(255,255,255,0.95)',
+  border: '1px solid rgba(91,126,194,0.2)',
+  borderRadius: '8px',
+  boxShadow: '0 4px 12px rgba(15,26,46,0.1)',
+};
+
 export default function OutreachPage() {
   const [stats, setStats] = useState(null);
   const [pending, setPending] = useState([]);
@@ -42,7 +49,6 @@ export default function OutreachPage() {
     setActionLoading(label);
     try {
       await action();
-      // Reload stats
       const s = await getOutreachStats(30);
       setStats(s);
     } catch (e) {
@@ -55,7 +61,7 @@ export default function OutreachPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 spinner-navy" />
       </div>
     );
   }
@@ -65,7 +71,7 @@ export default function OutreachPage() {
     ? Object.entries(stats.response_breakdown).map(([cat, count]) => ({
         name: cat.replace(/_/g, ' '),
         count,
-        fill: cat === 'positive' ? '#22c55e' : cat === 'negative' ? '#ef4444' : cat === 'objection' ? '#f59e0b' : '#94a3b8',
+        fill: cat === 'positive' ? '#22c55e' : cat === 'negative' ? '#ef4444' : cat === 'objection' ? '#f59e0b' : '#9aa5bd',
       }))
     : [];
 
@@ -76,7 +82,12 @@ export default function OutreachPage() {
     {
       key: 'sequence_step',
       label: 'Step',
-      render: (v) => <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{v}/4</span>,
+      render: (v) => (
+        <span className="font-mono text-xs px-2 py-0.5 rounded" style={{
+          background: 'rgba(58,82,137,0.08)',
+          color: '#3a5289',
+        }}>{v}/4</span>
+      ),
     },
     {
       key: 'status',
@@ -94,14 +105,17 @@ export default function OutreachPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Outreach</h2>
-          <p className="text-sm text-gray-500 mt-1">Email sequences and engagement tracking</p>
+          <h2 className="text-xl font-bold" style={{ color: '#1b2a4a' }}>Outreach</h2>
+          <p className="text-sm mt-1" style={{ color: '#6b7a99' }}>Email sequences and engagement tracking</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => handleAction(triggerAutoOutreach, 'outreach')}
             disabled={actionLoading !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-white disabled:opacity-50 transition-all duration-200"
+            style={{ background: 'linear-gradient(135deg, #3a5289, #2b3f6b)', boxShadow: '0 2px 8px rgba(58,82,137,0.3)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(58,82,137,0.4)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(58,82,137,0.3)'; }}
           >
             {actionLoading === 'outreach' ? (
               <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
@@ -113,7 +127,10 @@ export default function OutreachPage() {
           <button
             onClick={() => handleAction(triggerFollowups, 'followups')}
             disabled={actionLoading !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg disabled:opacity-50 transition-all duration-200"
+            style={{ border: '1px solid rgba(91,126,194,0.2)', color: '#374a6d', background: 'rgba(255,255,255,0.8)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(91,126,194,0.08)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.8)'; }}
           >
             {actionLoading === 'followups' ? (
               <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-gray-600" />
@@ -133,35 +150,33 @@ export default function OutreachPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Daily send volume */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">Daily Send Volume</h3>
+        <div className="lg:col-span-2 glass-card rounded-xl p-5">
+          <h3 className="text-sm font-semibold mb-4" style={{ color: '#374a6d' }}>Daily Send Volume</h3>
           {dailyData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={dailyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="sent" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,26,46,0.06)" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7a99' }} />
+                <YAxis tick={{ fill: '#6b7a99' }} />
+                <Tooltip contentStyle={chartTooltipStyle} />
+                <Line type="monotone" dataKey="sent" stroke="#3a5289" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="replied" stroke="#22c55e" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-sm text-gray-400 text-center py-12">No send data yet</p>
+            <p className="text-sm text-center py-12" style={{ color: '#9aa5bd' }}>No send data yet</p>
           )}
         </div>
 
-        {/* Response breakdown */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">Response Breakdown</h3>
+        <div className="glass-card rounded-xl p-5">
+          <h3 className="text-sm font-semibold mb-4" style={{ color: '#374a6d' }}>Response Breakdown</h3>
           {responseData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={responseData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(15,26,46,0.06)" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6b7a99' }} />
+                <YAxis tick={{ fill: '#6b7a99' }} />
+                <Tooltip contentStyle={chartTooltipStyle} />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {responseData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
@@ -170,14 +185,13 @@ export default function OutreachPage() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-sm text-gray-400 text-center py-12">No replies yet</p>
+            <p className="text-sm text-center py-12" style={{ color: '#9aa5bd' }}>No replies yet</p>
           )}
         </div>
       </div>
 
-      {/* Pending outreach queue */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Pending Queue</h3>
+        <h3 className="text-sm font-semibold mb-3" style={{ color: '#374a6d' }}>Pending Queue</h3>
         <DataTable
           columns={pendingColumns}
           rows={pending}

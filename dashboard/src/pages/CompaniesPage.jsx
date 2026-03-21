@@ -21,25 +21,35 @@ function CompanyDrawer({ companyId, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-white shadow-xl overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-5 py-4 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Company Details</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+      <div className="absolute inset-0" style={{ background: 'rgba(15, 26, 46, 0.5)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <div className="relative w-full max-w-lg overflow-y-auto" style={{
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(238,241,248,0.98) 100%)',
+        boxShadow: '-8px 0 40px rgba(15, 26, 46, 0.15)',
+      }}>
+        <div className="sticky top-0 px-5 py-4 flex items-center justify-between" style={{
+          background: 'rgba(255,255,255,0.9)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(91,126,194,0.1)',
+        }}>
+          <h3 className="font-semibold" style={{ color: '#1b2a4a' }}>Company Details</h3>
+          <button onClick={onClose} className="transition-colors" style={{ color: '#9aa5bd' }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#374a6d'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#9aa5bd'; }}
+          >
             <X size={20} />
           </button>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+            <div className="animate-spin rounded-full h-8 w-8 border-2 spinner-navy" />
           </div>
         ) : company ? (
           <div className="p-5 space-y-5">
             <div>
-              <h4 className="text-lg font-bold text-gray-900">{company.brand_name}</h4>
+              <h4 className="text-lg font-bold" style={{ color: '#1b2a4a' }}>{company.brand_name}</h4>
               {company.legal_name && company.legal_name !== company.brand_name && (
-                <p className="text-sm text-gray-500">{company.legal_name}</p>
+                <p className="text-sm" style={{ color: '#6b7a99' }}>{company.legal_name}</p>
               )}
               <div className="flex gap-2 mt-2">
                 <StatusBadge status={company.pipeline_stage} />
@@ -49,33 +59,36 @@ function CompanyDrawer({ companyId, onClose }) {
 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-start gap-2">
-                <Globe size={14} className="text-gray-400 mt-0.5" />
+                <Globe size={14} className="mt-0.5" style={{ color: '#9aa5bd' }} />
                 <div>
-                  <p className="text-gray-500">Domain</p>
-                  <p className="font-medium text-gray-900">{company.domain || '—'}</p>
+                  <p style={{ color: '#6b7a99' }}>Domain</p>
+                  <p className="font-medium" style={{ color: '#1b2a4a' }}>{company.domain || '—'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
-                <Users size={14} className="text-gray-400 mt-0.5" />
+                <Users size={14} className="mt-0.5" style={{ color: '#9aa5bd' }} />
                 <div>
-                  <p className="text-gray-500">Size</p>
-                  <p className="font-medium text-gray-900">{company.employee_range || '—'}</p>
+                  <p style={{ color: '#6b7a99' }}>Size</p>
+                  <p className="font-medium" style={{ color: '#1b2a4a' }}>{company.employee_range || '—'}</p>
                 </div>
               </div>
               <div>
-                <p className="text-gray-500">Industry</p>
-                <p className="font-medium text-gray-900 capitalize">{company.industry || '—'}</p>
+                <p style={{ color: '#6b7a99' }}>Industry</p>
+                <p className="font-medium capitalize" style={{ color: '#1b2a4a' }}>{company.industry || '—'}</p>
               </div>
               <div>
-                <p className="text-gray-500">HQ</p>
-                <p className="font-medium text-gray-900">{company.hq_country || '—'}</p>
+                <p style={{ color: '#6b7a99' }}>HQ</p>
+                <p className="font-medium" style={{ color: '#1b2a4a' }}>{company.hq_country || '—'}</p>
               </div>
             </div>
 
             {company.composite_score != null && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-xs text-gray-500 font-medium mb-2">Scoring Breakdown</p>
-                <div className="text-2xl font-bold text-gray-900 mb-3">
+              <div className="rounded-lg p-4" style={{
+                background: 'linear-gradient(145deg, rgba(238,241,248,0.8), rgba(224,230,242,0.6))',
+                border: '1px solid rgba(91,126,194,0.1)',
+              }}>
+                <p className="text-xs font-medium mb-2" style={{ color: '#6b7a99' }}>Scoring Breakdown</p>
+                <div className="text-2xl font-bold mb-3" style={{ color: '#1b2a4a' }}>
                   {company.composite_score.toFixed(3)}
                 </div>
                 <div className="space-y-2 text-sm">
@@ -86,12 +99,12 @@ function CompanyDrawer({ companyId, onClose }) {
                     ['Reachability', company.reachability_score, 0.15],
                   ].map(([label, val, weight]) => (
                     <div key={label} className="flex items-center justify-between">
-                      <span className="text-gray-600">{label} ({(weight * 100).toFixed(0)}%)</span>
+                      <span style={{ color: '#6b7a99' }}>{label} ({(weight * 100).toFixed(0)}%)</span>
                       <div className="flex items-center gap-2">
-                        <div className="w-20 bg-gray-200 rounded-full h-1.5">
-                          <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${(val || 0) * 100}%` }} />
+                        <div className="w-20 rounded-full h-1.5" style={{ background: 'rgba(58,82,137,0.12)' }}>
+                          <div className="h-1.5 rounded-full" style={{ width: `${(val || 0) * 100}%`, background: 'linear-gradient(90deg, #3a5289, #5b7ec2)' }} />
                         </div>
-                        <span className="font-mono text-xs w-8 text-right">{val != null ? val.toFixed(2) : '—'}</span>
+                        <span className="font-mono text-xs w-8 text-right" style={{ color: '#3a5289' }}>{val != null ? val.toFixed(2) : '—'}</span>
                       </div>
                     </div>
                   ))}
@@ -101,15 +114,18 @@ function CompanyDrawer({ companyId, onClose }) {
 
             {company.platform_handles && company.platform_handles.length > 0 && (
               <div>
-                <p className="text-xs text-gray-500 font-medium mb-2">Platform Handles</p>
+                <p className="text-xs font-medium mb-2" style={{ color: '#6b7a99' }}>Platform Handles</p>
                 <div className="space-y-2">
                   {company.platform_handles.map((h, i) => (
-                    <div key={i} className="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
-                      <span className="capitalize font-medium text-gray-700">{h.platform}</span>
+                    <div key={i} className="flex items-center justify-between text-sm rounded-lg px-3 py-2" style={{
+                      background: 'linear-gradient(145deg, rgba(238,241,248,0.6), rgba(224,230,242,0.4))',
+                      border: '1px solid rgba(91,126,194,0.08)',
+                    }}>
+                      <span className="capitalize font-medium" style={{ color: '#374a6d' }}>{h.platform}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-600">{h.current_handle || 'None'}</span>
-                        {h.is_available && <span className="text-xs text-green-600 font-medium">AVAILABLE</span>}
-                        {h.is_dormant && <span className="text-xs text-amber-600 font-medium">DORMANT</span>}
+                        <span style={{ color: '#6b7a99' }}>{h.current_handle || 'None'}</span>
+                        {h.is_available && <span className="text-xs font-medium" style={{ color: '#059669' }}>AVAILABLE</span>}
+                        {h.is_dormant && <span className="text-xs font-medium" style={{ color: '#d97706' }}>DORMANT</span>}
                       </div>
                     </div>
                   ))}
@@ -118,7 +134,7 @@ function CompanyDrawer({ companyId, onClose }) {
             )}
           </div>
         ) : (
-          <p className="p-5 text-sm text-gray-400">Company not found</p>
+          <p className="p-5 text-sm" style={{ color: '#9aa5bd' }}>Company not found</p>
         )}
       </div>
     </div>
@@ -157,7 +173,7 @@ export default function CompaniesPage() {
     {
       key: 'composite_score',
       label: 'Score',
-      render: (v) => v != null ? <span className="font-mono">{v.toFixed(2)}</span> : '—',
+      render: (v) => v != null ? <span className="font-mono" style={{ color: '#3a5289' }}>{v.toFixed(2)}</span> : '—',
     },
     { key: 'pipeline_stage', label: 'Stage', render: (v) => <StatusBadge status={v} /> },
     {
@@ -169,11 +185,18 @@ export default function CompaniesPage() {
 
   const STAGES = ['new', 'scanned', 'scored', 'enriched', 'qualified', 'approval_queue', 'outreach_active', 'meeting_booked', 'rejected', 'parked'];
 
+  const inputStyle = {
+    background: 'rgba(255,255,255,0.9)',
+    border: '1px solid rgba(91,126,194,0.2)',
+    color: '#374a6d',
+    outline: 'none',
+  };
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Companies</h2>
-        <p className="text-sm text-gray-500 mt-1">All companies in the acquisition pipeline</p>
+        <h2 className="text-xl font-bold" style={{ color: '#1b2a4a' }}>Companies</h2>
+        <p className="text-sm mt-1" style={{ color: '#6b7a99' }}>All companies in the acquisition pipeline</p>
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -182,12 +205,14 @@ export default function CompaniesPage() {
           placeholder="Search companies..."
           value={filters.search}
           onChange={(e) => { setFilters(f => ({ ...f, search: e.target.value })); setPage(1); }}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 w-64 bg-white"
+          className="text-sm rounded-lg px-3 py-1.5 w-64"
+          style={inputStyle}
         />
         <select
           value={filters.stage}
           onChange={(e) => { setFilters(f => ({ ...f, stage: e.target.value })); setPage(1); }}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-700"
+          className="text-sm rounded-lg px-3 py-1.5"
+          style={inputStyle}
         >
           <option value="">All Stages</option>
           {STAGES.map(s => (
@@ -198,7 +223,7 @@ export default function CompaniesPage() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <div className="animate-spin rounded-full h-8 w-8 border-2 spinner-navy" />
         </div>
       ) : (
         <>
@@ -209,19 +234,21 @@ export default function CompaniesPage() {
             emptyMessage="No companies found matching your criteria"
           />
           <div className="flex items-center justify-between text-sm">
-            <p className="text-gray-500">{companies.length} companies shown</p>
+            <p style={{ color: '#6b7a99' }}>{companies.length} companies shown</p>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-3 py-1 rounded border border-gray-300 text-gray-600 disabled:opacity-40"
+                className="px-3 py-1 rounded-lg text-sm font-medium disabled:opacity-40 transition-all duration-200"
+                style={{ border: '1px solid rgba(91,126,194,0.2)', color: '#374a6d', background: 'rgba(255,255,255,0.8)' }}
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage(p => p + 1)}
                 disabled={companies.length < 50}
-                className="px-3 py-1 rounded border border-gray-300 text-gray-600 disabled:opacity-40"
+                className="px-3 py-1 rounded-lg text-sm font-medium disabled:opacity-40 transition-all duration-200"
+                style={{ border: '1px solid rgba(91,126,194,0.2)', color: '#374a6d', background: 'rgba(255,255,255,0.8)' }}
               >
                 Next
               </button>

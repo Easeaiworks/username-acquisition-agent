@@ -35,13 +35,13 @@ export default function OpportunitiesPage() {
       label: 'Score',
       render: (v) => (
         <div className="flex items-center gap-2">
-          <div className="w-16 bg-gray-200 rounded-full h-1.5">
+          <div className="w-16 rounded-full h-1.5" style={{ background: 'rgba(58, 82, 137, 0.15)' }}>
             <div
-              className="bg-blue-600 h-1.5 rounded-full"
-              style={{ width: `${(v || 0) * 100}%` }}
+              className="h-1.5 rounded-full"
+              style={{ width: `${(v || 0) * 100}%`, background: 'linear-gradient(90deg, #3a5289, #5b7ec2)' }}
             />
           </div>
-          <span className="font-mono text-xs">{v != null ? v.toFixed(2) : '—'}</span>
+          <span className="font-mono text-xs" style={{ color: '#3a5289' }}>{v != null ? v.toFixed(2) : '—'}</span>
         </div>
       ),
     },
@@ -71,13 +71,19 @@ export default function OpportunitiesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Opportunities</h2>
-          <p className="text-sm text-gray-500 mt-1">Scored companies ranked by acquisition potential</p>
+          <h2 className="text-xl font-bold" style={{ color: '#1b2a4a' }}>Opportunities</h2>
+          <p className="text-sm mt-1" style={{ color: '#6b7a99' }}>Scored companies ranked by acquisition potential</p>
         </div>
         <select
           value={limit}
           onChange={(e) => setLimit(Number(e.target.value))}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-700"
+          className="text-sm rounded-lg px-3 py-1.5"
+          style={{
+            background: 'rgba(255,255,255,0.9)',
+            border: '1px solid rgba(91,126,194,0.2)',
+            color: '#374a6d',
+            outline: 'none',
+          }}
         >
           <option value={25}>Top 25</option>
           <option value={50}>Top 50</option>
@@ -87,7 +93,7 @@ export default function OpportunitiesPage() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <div className="animate-spin rounded-full h-8 w-8 border-2 spinner-navy" />
         </div>
       ) : (
         <DataTable
