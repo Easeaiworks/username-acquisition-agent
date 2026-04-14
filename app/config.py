@@ -42,6 +42,7 @@ class Settings(BaseSettings):
 
     # --- Email Sending ---
     instantly_api_key: Optional[str] = Field(default=None, alias="INSTANTLY_API_KEY")
+    instantly_campaign_id: Optional[str] = Field(default=None, alias="INSTANTLY_CAMPAIGN_ID")
     smartlead_api_key: Optional[str] = Field(default=None, alias="SMARTLEAD_API_KEY")
 
     # --- Calendly ---

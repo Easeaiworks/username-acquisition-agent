@@ -28,6 +28,7 @@ from app.config import settings
 from app.database import get_service_client
 from app.engine_b.message_generator import generate_outreach_message
 from app.engine_b.reply_classifier import classify_reply
+from app.integrations import instantly
 from app.utils.compliance import can_send_outreach, add_to_suppression_list
 
 logger = structlog.get_logger()
@@ -486,42 +487,120 @@ async def _get_platform_details(company_id: str) -> list[dict]:
 
 async def _send_email(outreach_id: str, record: dict) -> bool:
     """
-    Send an email via Instantly.ai or Smartlead.
+    Send an outreach email via the configured provider.
 
-    For now, this marks the record as 'sent' in the DB.
-    The actual email sending integration will use the Instantly.ai or
-    Smartlead API when those keys are configured.
+    Priority: Instantly.ai (if INSTANTLY_API_KEY set) → Smartlead (TODO) → dry-run.
+    In dry-run mode the record is still marked as ``sent`` so downstream
+    pipeline tests work without hitting a real provider.
     """
+    db = get_service_client()
+    now = datetime.now(timezone.utc)
+
+    provider: Optional[str] = None
+    provider_response: Optional[dict] = None
+    error_message: Optional[str] = None
+
     try:
-        db = get_service_client()
-        now = datetime.now(timezone.utc)
+        # Resolve recipient info from the record / contact row
+        contact_id = record.get("contact_id")
+        contact_row: dict = {}
+        company_row: dict = {}
 
-        # TODO: Integrate with Instantly.ai or Smartlead API
-        # For now, mark as sent (actual sending happens when API keys are configured)
-        if settings.instantly_api_key or settings.smartlead_api_key:
-            # Placeholder for actual API call
-            logger.info("email_sending_via_provider", outreach_id=outreach_id)
-            # await _send_via_instantly(record)  # TODO
-            # await _send_via_smartlead(record)  # TODO
+        if contact_id:
+            try:
+                res = db.table("contacts").select(
+                    "email, first_name, last_name, full_name"
+                ).eq("id", contact_id).single().execute()
+                contact_row = res.data or {}
+            except Exception:
+                contact_row = {}
 
-        db.table("outreach_sequences").update({
+        company_id = record.get("company_id")
+        if company_id:
+            try:
+                res = db.table("companies").select("brand_name").eq(
+                    "id", company_id
+                ).single().execute()
+                company_row = res.data or {}
+            except Exception:
+                company_row = {}
+
+        to_email = contact_row.get("email")
+        if not to_email:
+            raise RuntimeError("contact has no email address")
+
+        subject = record.get("subject") or ""
+        body = record.get("message_body") or ""
+        first = contact_row.get("first_name") or (
+            (contact_row.get("full_name") or "").split(" ", 1)[0] or None
+        )
+        last = contact_row.get("last_name")
+
+        # ---- Instantly.ai ----
+        if settings.instantly_api_key:
+            provider = "instantly"
+            provider_response = await instantly.send_outreach(
+                to_email=to_email,
+                subject=subject,
+                body=body,
+                first_name=first,
+                last_name=last,
+                company_name=company_row.get("brand_name"),
+            )
+            logger.info(
+                "email_sent_via_instantly",
+                outreach_id=outreach_id,
+                to=to_email,
+                lead_id=(provider_response or {}).get("id"),
+            )
+
+        # ---- Smartlead fallback (not yet implemented) ----
+        elif settings.smartlead_api_key:
+            provider = "smartlead"
+            logger.warning(
+                "smartlead_not_implemented",
+                outreach_id=outreach_id,
+                note="Smartlead integration not yet wired — marking sent for dry-run",
+            )
+
+        # ---- Dry-run: no provider configured ----
+        else:
+            provider = "dry_run"
+            logger.warning(
+                "email_dry_run",
+                outreach_id=outreach_id,
+                to=to_email,
+                note="No email provider configured — marking sent without dispatch",
+            )
+
+        update = {
             "status": "sent",
             "sent_at": now.isoformat(),
             "updated_at": now.isoformat(),
-        }).eq("id", outreach_id).execute()
+            "provider": provider,
+        }
+        if provider_response and provider_response.get("id"):
+            update["provider_message_id"] = provider_response["id"]
 
-        logger.info("email_sent", outreach_id=outreach_id)
+        db.table("outreach_sequences").update(update).eq("id", outreach_id).execute()
         return True
 
     except Exception as e:
-        logger.error("send_email_error", outreach_id=outreach_id, error=str(e))
-
-        db = get_service_client()
-        db.table("outreach_sequences").update({
-            "status": "failed",
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }).eq("id", outreach_id).execute()
-
+        error_message = str(e)
+        logger.error(
+            "send_email_error",
+            outreach_id=outreach_id,
+            provider=provider,
+            error=error_message,
+        )
+        try:
+            db.table("outreach_sequences").update({
+                "status": "failed",
+                "error_message": error_message[:500],
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }).eq("id", outreach_id).execute()
+        except Exception:
+            pass
         return False
 
 
