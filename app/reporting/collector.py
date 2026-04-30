@@ -35,7 +35,7 @@ async def collect_pipeline_metrics(
     # Total companies by stage
     stages = {}
     for stage in [
-        "new", "scanned", "scored", "enriched", "qualified",
+        "discovered", "new", "scanned", "scored", "enriched", "qualified",
         "approval_queue", "outreach_active", "meeting_booked",
         "rejected", "parked",
     ]:
@@ -111,12 +111,12 @@ async def collect_scoring_metrics(
     # Average score of companies scored today
     scored_results = (
         db.table("companies")
-        .select("composite_score")
+        .select("total_opportunity_score")
         .gte("scored_at", start_iso)
         .lt("scored_at", end_iso)
         .execute()
     )
-    scores = [r["composite_score"] for r in (scored_results.data or []) if r.get("composite_score")]
+    scores = [r["total_opportunity_score"] for r in (scored_results.data or []) if r.get("total_opportunity_score")]
     avg_score = round(sum(scores) / len(scores), 4) if scores else 0.0
 
     return {
@@ -225,15 +225,19 @@ async def collect_top_opportunities(
 
     result = (
         db.table("companies")
-        .select("id, brand_name, domain, industry, composite_score, priority_bucket, pipeline_stage")
+        .select("id, brand_name, domain, industry, total_opportunity_score, priority_bucket, pipeline_stage")
         .gte("scored_at", day_start.isoformat())
         .lt("scored_at", day_end.isoformat())
-        .order("composite_score", desc=True)
+        .order("total_opportunity_score", desc=True)
         .limit(limit)
         .execute()
     )
 
-    return result.data or []
+    # Map total_opportunity_score → composite_score for frontend compatibility
+    opps = result.data or []
+    for opp in opps:
+        opp["composite_score"] = opp.pop("total_opportunity_score", 0)
+    return opps
 
 
 async def collect_attention_items() -> dict[str, Any]:

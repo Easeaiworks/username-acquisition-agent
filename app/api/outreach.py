@@ -106,58 +106,6 @@ async def create_manual_outreach(request: ManualOutreachRequest):
     return result
 
 
-@router.post("/{outreach_id}/reply")
-async def process_reply(outreach_id: str, request: ReplyRequest):
-    """Process an incoming reply to an outreach message."""
-    result = await handle_reply(
-        outreach_id=outreach_id,
-        reply_text=request.reply_text,
-    )
-
-    if "error" in result:
-        raise HTTPException(status_code=404, detail=result["error"])
-
-    return result
-
-
-@router.get("/{outreach_id}")
-async def get_outreach_detail(outreach_id: str):
-    """Get detailed info about a specific outreach sequence."""
-    db = get_service_client()
-
-    result = (
-        db.table("outreach_sequences")
-        .select("*, contacts(full_name, email, title), companies(brand_name)")
-        .eq("id", outreach_id)
-        .execute()
-    )
-
-    if not result.data:
-        raise HTTPException(status_code=404, detail="Outreach record not found")
-
-    return result.data[0]
-
-
-@router.get("/company/{company_id}")
-async def get_company_outreach(company_id: str):
-    """Get all outreach sequences for a company."""
-    db = get_service_client()
-
-    result = (
-        db.table("outreach_sequences")
-        .select("*, contacts(full_name, email, title)")
-        .eq("company_id", company_id)
-        .order("created_at", desc=True)
-        .execute()
-    )
-
-    return {
-        "company_id": company_id,
-        "sequences": result.data,
-        "total": len(result.data),
-    }
-
-
 @router.get("/queue/pending")
 async def get_pending_outreach(
     page: int = Query(default=1, ge=1),
@@ -182,6 +130,40 @@ async def get_pending_outreach(
         "page": page,
         "page_size": page_size,
     }
+
+
+@router.get("/company/{company_id}")
+async def get_company_outreach(company_id: str):
+    """Get all outreach sequences for a company."""
+    db = get_service_client()
+
+    result = (
+        db.table("outreach_sequences")
+        .select("*, contacts(full_name, email, title)")
+        .eq("company_id", company_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    return {
+        "company_id": company_id,
+        "sequences": result.data,
+        "total": len(result.data),
+    }
+
+
+@router.post("/{outreach_id}/reply")
+async def process_reply(outreach_id: str, request: ReplyRequest):
+    """Process an incoming reply to an outreach message."""
+    result = await handle_reply(
+        outreach_id=outreach_id,
+        reply_text=request.reply_text,
+    )
+
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+
+    return result
 
 
 @router.post("/{outreach_id}/approve")
@@ -222,3 +204,22 @@ async def reject_outreach(outreach_id: str):
     }).eq("id", outreach_id).execute()
 
     return {"status": "rejected", "outreach_id": outreach_id}
+
+
+# --- Catch-all: MUST be last to avoid intercepting named routes above ---
+@router.get("/{outreach_id}")
+async def get_outreach_detail(outreach_id: str):
+    """Get detailed info about a specific outreach sequence."""
+    db = get_service_client()
+
+    result = (
+        db.table("outreach_sequences")
+        .select("*, contacts(full_name, email, title), companies(brand_name)")
+        .eq("id", outreach_id)
+        .execute()
+    )
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Outreach record not found")
+
+    return result.data[0]
