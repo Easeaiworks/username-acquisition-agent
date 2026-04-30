@@ -24,6 +24,7 @@ from app.api.scoring import router as scoring_router
 from app.api.enrichment import router as enrichment_router
 from app.api.outreach import router as outreach_router
 from app.api.reports import router as reports_router
+from app.api.settings import router as settings_router
 
 import structlog
 
@@ -122,6 +123,7 @@ app.include_router(scoring_router)
 app.include_router(enrichment_router)
 app.include_router(outreach_router)
 app.include_router(reports_router)
+app.include_router(settings_router)
 
 
 @app.get("/health")

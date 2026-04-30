@@ -7,6 +7,7 @@ import CompaniesPage from './pages/CompaniesPage';
 import OutreachPage from './pages/OutreachPage';
 import ApprovalsPage from './pages/ApprovalsPage';
 import ReportsPage from './pages/ReportsPage';
+import SettingsPage from './pages/SettingsPage';
 
 const PAGES = {
   overview: OverviewPage,
@@ -16,6 +17,7 @@ const PAGES = {
   outreach: OutreachPage,
   approvals: ApprovalsPage,
   reports: ReportsPage,
+  settings: SettingsPage,
 };
 
 export default function App() {

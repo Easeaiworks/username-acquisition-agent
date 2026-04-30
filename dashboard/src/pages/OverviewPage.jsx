@@ -34,7 +34,7 @@ export default function OverviewPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 spinner-navy" />
       </div>
     );
   }
@@ -44,8 +44,8 @@ export default function OverviewPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Dashboard Overview</h2>
-        <p className="text-sm text-gray-500 mt-1">Daily pipeline status and key metrics</p>
+        <h2 className="text-xl font-bold" style={{ color: '#1b2a4a' }}>Dashboard Overview</h2>
+        <p className="text-sm mt-1" style={{ color: '#6b7a99' }}>Daily pipeline status and key metrics</p>
       </div>
 
       {/* KPI Row */}
@@ -105,7 +105,7 @@ export default function OverviewPage() {
       {/* Two-column: Top Opportunities + Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Top Opportunities</h3>
+          <h3 className="text-sm font-semibold mb-3" style={{ color: '#374a6d' }}>Top Opportunities</h3>
           <DataTable
             columns={[
               { key: 'brand_name', label: 'Company' },
@@ -113,7 +113,7 @@ export default function OverviewPage() {
                 key: 'composite_score',
                 label: 'Score',
                 render: (v) => (
-                  <span className="font-mono font-medium">{v != null ? v.toFixed(2) : '—'}</span>
+                  <span className="font-mono font-medium" style={{ color: '#3a5289' }}>{v != null ? v.toFixed(2) : '—'}</span>
                 ),
               },
               {
@@ -133,22 +133,34 @@ export default function OverviewPage() {
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Recent Activity</h3>
-          <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: '#374a6d' }}>Recent Activity</h3>
+          <div className="glass-table rounded-xl" style={{ overflow: 'hidden' }}>
             {activity.length === 0 ? (
-              <p className="p-4 text-sm text-gray-400 text-center">No recent activity</p>
+              <p className="p-4 text-sm text-center" style={{ color: '#9aa5bd' }}>No recent activity</p>
             ) : (
               activity.map((item, i) => (
-                <div key={i} className="px-4 py-3 flex items-start gap-3">
-                  <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${
-                    item.type === 'meeting_booked' ? 'bg-green-500' :
-                    item.type === 'outreach_sent' ? 'bg-blue-500' :
-                    item.type === 'reply_received' ? 'bg-amber-500' :
-                    'bg-gray-400'
-                  }`} />
+                <div
+                  key={i}
+                  className="px-4 py-3 flex items-start gap-3 transition-all duration-200"
+                  style={{ borderBottom: '1px solid rgba(15, 26, 46, 0.04)' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(91, 126, 194, 0.04)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 activity-dot`} style={{
+                    backgroundColor:
+                      item.type === 'meeting_booked' ? '#10b981' :
+                      item.type === 'outreach_sent' ? '#3a5289' :
+                      item.type === 'reply_received' ? '#d97706' :
+                      '#9aa5bd',
+                    color:
+                      item.type === 'meeting_booked' ? '#10b981' :
+                      item.type === 'outreach_sent' ? '#3a5289' :
+                      item.type === 'reply_received' ? '#d97706' :
+                      '#9aa5bd',
+                  }} />
                   <div className="min-w-0">
-                    <p className="text-sm text-gray-700 truncate">{item.description}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</p>
+                    <p className="text-sm truncate" style={{ color: '#374a6d' }}>{item.description}</p>
+                    <p className="text-xs mt-0.5" style={{ color: '#9aa5bd' }}>{item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</p>
                   </div>
                 </div>
               ))

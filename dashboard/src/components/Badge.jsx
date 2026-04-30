@@ -1,10 +1,10 @@
 const VARIANTS = {
-  green: 'bg-green-100 text-green-800',
-  red: 'bg-red-100 text-red-800',
-  amber: 'bg-amber-100 text-amber-800',
-  blue: 'bg-blue-100 text-blue-800',
-  purple: 'bg-purple-100 text-purple-800',
-  gray: 'bg-gray-100 text-gray-700',
+  green: { background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)', color: '#065f46', border: '1px solid rgba(6, 95, 70, 0.1)' },
+  red: { background: 'linear-gradient(135deg, #fee2e2, #fecaca)', color: '#991b1b', border: '1px solid rgba(153, 27, 27, 0.1)' },
+  amber: { background: 'linear-gradient(135deg, #fef3c7, #fde68a)', color: '#92400e', border: '1px solid rgba(146, 64, 14, 0.1)' },
+  blue: { background: 'linear-gradient(135deg, #dbeafe, #bfdbfe)', color: '#1e40af', border: '1px solid rgba(30, 64, 175, 0.1)' },
+  purple: { background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', color: '#5b21b6', border: '1px solid rgba(91, 33, 182, 0.1)' },
+  gray: { background: 'linear-gradient(135deg, #f3f4f6, #e5e7eb)', color: '#374151', border: '1px solid rgba(55, 65, 81, 0.1)' },
 };
 
 const PRIORITY_MAP = {
@@ -41,8 +41,12 @@ export function StatusBadge({ status }) {
 }
 
 export default function Badge({ color = 'gray', children }) {
+  const style = VARIANTS[color] || VARIANTS.gray;
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${VARIANTS[color] || VARIANTS.gray}`}>
+    <span
+      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize"
+      style={style}
+    >
       {children}
     </span>
   );
