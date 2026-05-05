@@ -66,6 +66,7 @@ export const getReportByDate = (date) => request(`/api/reports/${date}`);
 
 // Settings
 export const getSettings = () => request('/api/settings/');
+export const getSystemStatus = () => request('/api/settings/system/status');
 export const updateSetting = (key, value) => request(`/api/settings/${key}`, { method: 'PUT', body: JSON.stringify({ value }) });
 export const testInstantly = () => request('/api/settings/instantly/test', { method: 'POST' });
 export const autoSetupInstantly = (apiKey, campaignName) => request('/api/settings/instantly/auto-setup', { method: 'POST', body: JSON.stringify({ api_key: apiKey, campaign_name: campaignName }) });

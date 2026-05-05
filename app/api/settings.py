@@ -1,8 +1,13 @@
 """
 Settings API routes — client-facing configuration for Instantly, sender info, etc.
 
-Clients use these endpoints (via the dashboard Settings page) to enter their
-own Instantly API key and campaign ID, so they don't need Railway access.
+Two-layer config system:
+  1. Railway env vars (set by admin in Railway dashboard) — read-only from here
+  2. client_settings Supabase table (set by client via Settings page) — read/write
+
+The DB value takes priority when present; otherwise the env var value is shown.
+This lets the pipeline work immediately from env vars while still giving
+clients a self-service UI to override later.
 """
 
 from fastapi import APIRouter, HTTPException
@@ -10,9 +15,10 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
 
+from app.config import settings as app_settings
 from app.database import get_service_client
-from app.integrations import instantly
 
+import httpx
 import structlog
 
 logger = structlog.get_logger()
@@ -29,24 +35,63 @@ class InstantlySetup(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Mapping: setting_key → Railway env var attribute on app_settings
+# ---------------------------------------------------------------------------
+ENV_VAR_MAP = {
+    "instantly_api_key": "instantly_api_key",
+    "instantly_campaign_id": "instantly_campaign_id",
+    "sender_email": "sender_email",
+    "sender_name": "sender_name",
+    "physical_address": "physical_address",
+    "calendly_event_url": "calendly_event_url",
+}
+
+
+def _get_env_value(key: str) -> Optional[str]:
+    """Look up the Railway env var value for a given setting key."""
+    attr = ENV_VAR_MAP.get(key)
+    if attr:
+        val = getattr(app_settings, attr, None)
+        return val if val else None
+    return None
+
+
+def _resolve_value(db_value: Optional[str], env_value: Optional[str]) -> tuple[str, str]:
+    """
+    Return (effective_value, source) where source is 'database', 'env', or 'none'.
+    DB value takes priority when present.
+    """
+    if db_value:
+        return db_value, "database"
+    if env_value:
+        return env_value, "env"
+    return "", "none"
+
+
+# ---------------------------------------------------------------------------
 # Read settings
 # ---------------------------------------------------------------------------
 
 @router.get("/")
 async def get_all_settings():
-    """Get all client settings (secrets are masked)."""
+    """Get all client settings, merging DB values with env var fallbacks."""
     db = get_service_client()
     result = db.table("client_settings").select("*").order("setting_key").execute()
 
     settings_list = []
     for s in (result.data or []):
-        val = s.get("setting_value") or ""
+        db_val = s.get("setting_value") or ""
+        env_val = _get_env_value(s["setting_key"])
+        effective, source = _resolve_value(db_val, env_val)
+        is_secret = s.get("is_secret", False)
+
         settings_list.append({
             "key": s["setting_key"],
-            "value": _mask(val) if s.get("is_secret") and val else val,
-            "has_value": bool(val),
+            "value": _mask(effective) if is_secret and effective else effective,
+            "has_value": bool(effective),
+            "source": source,
             "description": s.get("description", ""),
-            "is_secret": s.get("is_secret", False),
+            "is_secret": is_secret,
             "updated_at": s.get("updated_at"),
         })
 
@@ -55,7 +100,7 @@ async def get_all_settings():
 
 @router.get("/{key}")
 async def get_setting(key: str):
-    """Get a single setting by key (secrets are masked)."""
+    """Get a single setting by key, with env var fallback."""
     db = get_service_client()
     result = db.table("client_settings").select("*").eq("setting_key", key).execute()
 
@@ -63,13 +108,18 @@ async def get_setting(key: str):
         raise HTTPException(status_code=404, detail=f"Setting '{key}' not found")
 
     s = result.data[0]
-    val = s.get("setting_value") or ""
+    db_val = s.get("setting_value") or ""
+    env_val = _get_env_value(key)
+    effective, source = _resolve_value(db_val, env_val)
+    is_secret = s.get("is_secret", False)
+
     return {
         "key": s["setting_key"],
-        "value": _mask(val) if s.get("is_secret") and val else val,
-        "has_value": bool(val),
+        "value": _mask(effective) if is_secret and effective else effective,
+        "has_value": bool(effective),
+        "source": source,
         "description": s.get("description", ""),
-        "is_secret": s.get("is_secret", False),
+        "is_secret": is_secret,
         "updated_at": s.get("updated_at"),
     }
 
@@ -80,7 +130,7 @@ async def get_setting(key: str):
 
 @router.put("/{key}")
 async def update_setting(key: str, body: SettingUpdate):
-    """Update a single setting value."""
+    """Update a single setting value in the DB (overrides env var)."""
     db = get_service_client()
     now = datetime.now(timezone.utc).isoformat()
 
@@ -101,24 +151,34 @@ async def update_setting(key: str, body: SettingUpdate):
 # Instantly integration helpers
 # ---------------------------------------------------------------------------
 
+def _get_instantly_key() -> Optional[str]:
+    """Get the Instantly API key from DB first, then env var fallback."""
+    try:
+        db = get_service_client()
+        key_row = (
+            db.table("client_settings")
+            .select("setting_value")
+            .eq("setting_key", "instantly_api_key")
+            .execute()
+        )
+        db_key = key_row.data[0]["setting_value"] if key_row.data else None
+        if db_key:
+            return db_key
+    except Exception:
+        pass
+    # Fallback to Railway env var
+    return app_settings.instantly_api_key
+
+
 @router.post("/instantly/test")
 async def test_instantly_connection():
-    """Test the Instantly API connection using the stored API key."""
-    db = get_service_client()
-    key_row = (
-        db.table("client_settings")
-        .select("setting_value")
-        .eq("setting_key", "instantly_api_key")
-        .execute()
-    )
-    api_key = (key_row.data[0]["setting_value"] if key_row.data else None)
+    """Test the Instantly API connection using stored key OR env var fallback."""
+    api_key = _get_instantly_key()
 
     if not api_key:
-        return {"ok": False, "error": "No API key configured. Enter your Instantly API key first."}
+        return {"ok": False, "error": "No API key configured. Set INSTANTLY_API_KEY in Railway or enter it on the Settings page."}
 
     try:
-        # Use the stored key to test the connection
-        import httpx
         async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.get(
                 "https://api.instantly.ai/api/v2/accounts",
@@ -126,7 +186,7 @@ async def test_instantly_connection():
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
                 },
-                params={"limit": 5},
+                params={"limit": 10},
             )
 
         if resp.status_code == 401:
@@ -143,7 +203,7 @@ async def test_instantly_connection():
             "sending_accounts": len(accounts),
             "accounts": [
                 {"email": a.get("email", ""), "status": a.get("status", "")}
-                for a in accounts[:5]
+                for a in accounts[:10]
             ],
         }
     except Exception as e:
@@ -159,14 +219,13 @@ async def auto_setup_instantly(body: InstantlySetup):
     db = get_service_client()
     now = datetime.now(timezone.utc).isoformat()
 
-    # 1. Save the API key
+    # 1. Save the API key to DB
     db.table("client_settings").update({
         "setting_value": body.api_key,
         "updated_at": now,
     }).eq("setting_key", "instantly_api_key").execute()
 
     # 2. Test the key
-    import httpx
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.get(
@@ -215,7 +274,7 @@ async def auto_setup_instantly(body: InstantlySetup):
             )
 
         if camp_resp.status_code >= 400:
-            # If timezone format fails, try without timezone
+            # Timezone format fallback
             async with httpx.AsyncClient(timeout=20.0) as client:
                 camp_resp = await client.post(
                     "https://api.instantly.ai/api/v2/campaigns",
@@ -269,6 +328,52 @@ async def auto_setup_instantly(body: InstantlySetup):
         "campaign_name": body.campaign_name,
         "message": "Instantly connected and campaign created successfully.",
     }
+
+
+# ---------------------------------------------------------------------------
+# System status — shows what's configured across both env vars and DB
+# ---------------------------------------------------------------------------
+
+@router.get("/system/status")
+async def get_system_status():
+    """
+    Comprehensive config status: which integrations have keys set
+    (from either env vars or DB), and which are missing.
+    """
+    checks = {
+        "supabase": bool(app_settings.supabase_url and app_settings.supabase_service_role_key),
+        "anthropic": bool(app_settings.anthropic_api_key),
+        "instantly_api_key": bool(_get_instantly_key()),
+        "instantly_campaign_id": bool(app_settings.instantly_campaign_id or _get_db_value("instantly_campaign_id")),
+        "youtube": bool(app_settings.youtube_api_key),
+        "twitch": bool(app_settings.twitch_client_id and app_settings.twitch_client_secret),
+        "apify": bool(app_settings.apify_api_token),
+        "rocketreach": bool(app_settings.rocketreach_api_key),
+        "hunter": bool(app_settings.hunter_api_key),
+        "sender_email": bool(app_settings.sender_email or _get_db_value("sender_email")),
+        "physical_address": bool(app_settings.physical_address or _get_db_value("physical_address")),
+    }
+
+    configured = sum(1 for v in checks.values() if v)
+    total = len(checks)
+
+    return {
+        "configured": configured,
+        "total": total,
+        "ready": configured == total,
+        "integrations": checks,
+    }
+
+
+def _get_db_value(key: str) -> Optional[str]:
+    """Quick lookup of a value from client_settings DB."""
+    try:
+        db = get_service_client()
+        result = db.table("client_settings").select("setting_value").eq("setting_key", key).execute()
+        val = result.data[0]["setting_value"] if result.data else None
+        return val if val else None
+    except Exception:
+        return None
 
 
 # ---------------------------------------------------------------------------

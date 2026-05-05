@@ -1,6 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Settings, Zap, Mail, MapPin, Calendar, Eye, EyeOff, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { getSettings, updateSetting, testInstantly, autoSetupInstantly } from '../lib/api';
+import { Settings, Zap, Mail, MapPin, Calendar, Eye, EyeOff, CheckCircle, XCircle, Loader2, Server, Database, Shield } from 'lucide-react';
+import { getSettings, getSystemStatus, updateSetting, testInstantly, autoSetupInstantly } from '../lib/api';
+
+function SourceBadge({ source }) {
+  if (source === 'env') {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium"
+        style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1' }}>
+        <Server size={9} /> Railway
+      </span>
+    );
+  }
+  if (source === 'database') {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium"
+        style={{ background: 'rgba(5,150,105,0.1)', color: '#059669' }}>
+        <Database size={9} /> Dashboard
+      </span>
+    );
+  }
+  return null;
+}
 
 function SettingRow({ setting, onSave }) {
   const [editing, setEditing] = useState(false);
@@ -8,9 +28,7 @@ function SettingRow({ setting, onSave }) {
   const [saving, setSaving] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
 
-  const displayValue = setting.is_secret && !showSecret
-    ? (setting.has_value ? setting.value : '')
-    : (setting.has_value ? setting.value : '');
+  const displayValue = setting.has_value ? setting.value : '';
 
   const handleSave = async () => {
     setSaving(true);
@@ -39,6 +57,7 @@ function SettingRow({ setting, onSave }) {
           {setting.has_value && (
             <CheckCircle size={14} style={{ color: '#059669' }} />
           )}
+          <SourceBadge source={setting.source} />
         </div>
         <p className="text-xs mt-0.5" style={{ color: '#9aa5bd' }}>{setting.description}</p>
 
@@ -65,7 +84,7 @@ function SettingRow({ setting, onSave }) {
               type={setting.is_secret ? 'password' : 'text'}
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder={`Enter ${setting.key.replace(/_/g, ' ')}`}
+              placeholder={setting.source === 'env' ? 'Override the Railway env var value' : `Enter ${setting.key.replace(/_/g, ' ')}`}
               className="flex-1 px-3 py-1.5 text-sm rounded-lg"
               style={{
                 border: '1px solid rgba(91,126,194,0.2)',
@@ -108,15 +127,63 @@ function SettingRow({ setting, onSave }) {
           onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(58,82,137,0.1)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(58,82,137,0.04)'; }}
         >
-          {setting.has_value ? 'Update' : 'Configure'}
+          {setting.has_value ? (setting.source === 'env' ? 'Override' : 'Update') : 'Configure'}
         </button>
       )}
     </div>
   );
 }
 
+function SystemStatusBar({ status }) {
+  if (!status) return null;
+
+  const { configured, total, integrations } = status;
+  const pct = Math.round((configured / total) * 100);
+
+  const missing = Object.entries(integrations)
+    .filter(([, v]) => !v)
+    .map(([k]) => k.replace(/_/g, ' '));
+
+  return (
+    <div className="glass-card rounded-xl p-4 mb-2">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Shield size={16} style={{ color: configured === total ? '#059669' : '#f59e0b' }} />
+          <span className="text-sm font-semibold" style={{ color: '#1b2a4a' }}>
+            System Configuration
+          </span>
+          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{
+            background: configured === total ? 'rgba(5,150,105,0.1)' : 'rgba(245,158,11,0.1)',
+            color: configured === total ? '#059669' : '#b45309',
+          }}>
+            {configured}/{total} integrations configured
+          </span>
+        </div>
+        <span className="text-xs font-mono" style={{ color: '#6b7a99' }}>{pct}%</span>
+      </div>
+      <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'rgba(91,126,194,0.1)' }}>
+        <div className="h-full rounded-full transition-all duration-500" style={{
+          width: `${pct}%`,
+          background: configured === total
+            ? 'linear-gradient(90deg, #059669, #10b981)'
+            : 'linear-gradient(90deg, #f59e0b, #fbbf24)',
+        }} />
+      </div>
+      {missing.length > 0 && (
+        <p className="text-xs mt-2" style={{ color: '#9aa5bd' }}>
+          Not yet configured: {missing.join(', ')}
+        </p>
+      )}
+      <p className="text-xs mt-1.5" style={{ color: '#6b7a99' }}>
+        Values can come from Railway env vars or be entered here. Both sources are checked.
+      </p>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState([]);
+  const [systemStatus, setSystemStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [testResult, setTestResult] = useState(null);
   const [testing, setTesting] = useState(false);
@@ -131,8 +198,12 @@ export default function SettingsPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await getSettings();
-      setSettings(data.settings || []);
+      const [settingsData, statusData] = await Promise.all([
+        getSettings(),
+        getSystemStatus().catch(() => null),
+      ]);
+      setSettings(settingsData.settings || []);
+      setSystemStatus(statusData);
     } catch (e) {
       console.error('Settings load error:', e);
     } finally {
@@ -202,6 +273,9 @@ export default function SettingsPage() {
         </p>
       </div>
 
+      {/* System Status Bar */}
+      <SystemStatusBar status={systemStatus} />
+
       {/* Instantly Integration Card */}
       <div className="glass-card rounded-xl overflow-hidden">
         <div className="px-5 py-4 flex items-center justify-between" style={{
@@ -219,7 +293,9 @@ export default function SettingsPage() {
               <p className="text-xs" style={{ color: '#9aa5bd' }}>
                 {hasInstantlyKey && hasInstantlyCampaign
                   ? 'Connected and ready to send'
-                  : 'Connect your Instantly account to enable outreach'}
+                  : hasInstantlyKey
+                    ? 'API key configured — campaign ID needed'
+                    : 'Connect your Instantly account to enable outreach'}
               </p>
             </div>
           </div>
@@ -277,7 +353,7 @@ export default function SettingsPage() {
                     background: 'rgba(5,150,105,0.1)',
                     color: '#059669',
                   }}>
-                    {a.email}
+                    {a.email} {a.status && `(${a.status})`}
                   </span>
                 ))}
               </div>
