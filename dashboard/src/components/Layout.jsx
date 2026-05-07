@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { LayoutDashboard, Building2, Target, Mail, CheckSquare, BarChart3, FileText, Settings, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Building2, Target, Mail, CheckSquare, BarChart3, FileText, Settings, Menu, X, LogOut } from 'lucide-react';
+import { useAuth } from '../lib/auth';
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
 
 export default function Layout({ currentPage, onNavigate, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { logout } = useAuth();
 
   return (
     <div className="flex h-screen" style={{ background: '#eef1f8' }}>
@@ -50,11 +52,19 @@ export default function Layout({ currentPage, onNavigate, children }) {
           ))}
         </nav>
 
-        <div className="absolute bottom-4 left-3 right-3">
+        <div className="absolute bottom-4 left-3 right-3 space-y-2">
           <div className="px-3 py-3 rounded-lg pipeline-status">
             <p className="text-xs" style={{ color: '#8b9fd4' }}>Daily Pipeline</p>
             <p className="text-sm font-medium" style={{ color: '#34d399' }}>Active — 6:00 AM</p>
           </div>
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors hover:bg-white/5"
+            style={{ color: '#8b9fd4' }}
+          >
+            <LogOut size={14} />
+            Sign Out
+          </button>
         </div>
       </aside>
 

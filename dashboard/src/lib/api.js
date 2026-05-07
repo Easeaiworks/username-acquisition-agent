@@ -6,12 +6,38 @@
 
 const BASE_URL = import.meta.env.VITE_API_URL || '';
 
+/**
+ * Get the stored Dashboard API key from sessionStorage.
+ * This is set by the LoginPage / AuthProvider on successful login.
+ */
+function getApiKey() {
+  try { return sessionStorage.getItem('sean_dashboard_api_key') || ''; }
+  catch { return ''; }
+}
+
 async function request(path, options = {}) {
   const url = `${BASE_URL}${path}`;
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  });
+  const apiKey = getApiKey();
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  // Include the Dashboard API key if available
+  if (apiKey) {
+    headers['X-API-Key'] = apiKey;
+  }
+
+  const res = await fetch(url, { ...options, headers });
+
+  // If we get a 401/403, the key is invalid or missing — signal auth failure
+  if (res.status === 401 || res.status === 403) {
+    const error = new Error('Authentication failed');
+    error.status = res.status;
+    error.isAuthError = true;
+    throw error;
+  }
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: res.statusText }));
