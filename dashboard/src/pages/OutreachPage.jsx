@@ -144,9 +144,9 @@ export default function OutreachPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Emails Sent" value={stats?.total_sent ?? '—'} sub="Last 30 days" icon={Mail} color="blue" />
-        <StatCard label="Replies" value={stats?.total_replies ?? '—'} sub={stats?.reply_rate ? `${(stats.reply_rate * 100).toFixed(1)}% rate` : ''} icon={MessageSquare} color="green" />
+        <StatCard label="Replies" value={stats?.total_replies ?? '—'} sub={stats?.reply_rate != null ? `${stats.reply_rate}% rate` : ''} icon={MessageSquare} color="green" />
         <StatCard label="Meetings Booked" value={stats?.meetings_booked ?? '—'} sub="From outreach" icon={Calendar} color="purple" />
-        <StatCard label="Active Sequences" value={stats?.active_sequences ?? '—'} sub="In progress" icon={Send} color="amber" />
+        <StatCard label="Positive Replies" value={stats?.positive_replies ?? '—'} sub="Interested leads" icon={Send} color="amber" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
