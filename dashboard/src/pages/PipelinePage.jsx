@@ -5,16 +5,14 @@ import { Layers, TrendingUp, Clock, Zap } from 'lucide-react';
 import { getPipelineSummary, getScoringDistribution } from '../lib/api';
 
 const STAGE_COLORS = {
-  new: '#9aa5bd',
+  discovered: '#9aa5bd',
   scanned: '#5b7ec2',
   scored: '#818cf8',
-  enriched: '#34d399',
+  enriching: '#34d399',
   qualified: '#22c55e',
-  approval_queue: '#fbbf24',
-  outreach_active: '#f97316',
-  meeting_booked: '#a855f7',
-  rejected: '#ef4444',
-  parked: '#9ca3af',
+  outreach: '#f97316',
+  meeting: '#a855f7',
+  closed: '#10b981',
 };
 
 const PIE_COLORS = ['#ef4444', '#f59e0b', '#3a5289', '#8b5cf6', '#9aa5bd'];
@@ -50,16 +48,16 @@ export default function PipelinePage() {
     );
   }
 
-  const stageData = pipeline?.stages
-    ? Object.entries(pipeline.stages).map(([stage, count]) => ({
+  const stageData = pipeline?.pipeline_stages
+    ? Object.entries(pipeline.pipeline_stages).map(([stage, count]) => ({
         name: stage.replace(/_/g, ' '),
         count,
         fill: STAGE_COLORS[stage] || '#9aa5bd',
       }))
     : [];
 
-  const priorityData = distribution?.buckets
-    ? Object.entries(distribution.buckets).map(([bucket, count], i) => ({
+  const priorityData = distribution?.bucket_distribution
+    ? Object.entries(distribution.bucket_distribution).map(([bucket, count], i) => ({
         name: bucket.replace(/_/g, ' '),
         value: count,
         fill: PIE_COLORS[i % PIE_COLORS.length],
@@ -74,10 +72,10 @@ export default function PipelinePage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total in Pipeline" value={pipeline?.total ?? '—'} icon={Layers} color="blue" />
-        <StatCard label="Scanned Today" value={pipeline?.scanned_today ?? '—'} icon={Zap} color="green" />
-        <StatCard label="Scored Today" value={pipeline?.scored_today ?? '—'} icon={TrendingUp} color="purple" />
-        <StatCard label="Avg. Processing Time" value={pipeline?.avg_processing_hours ? `${pipeline.avg_processing_hours}h` : '—'} icon={Clock} color="amber" />
+        <StatCard label="Total in Pipeline" value={pipeline?.total_companies ?? '—'} icon={Layers} color="blue" />
+        <StatCard label="Total Scored" value={distribution?.total_scored ?? '—'} icon={Zap} color="green" />
+        <StatCard label="Avg. Score" value={distribution?.avg_score != null ? distribution.avg_score.toFixed(2) : '—'} icon={TrendingUp} color="purple" />
+        <StatCard label="Max Score" value={distribution?.max_score != null ? distribution.max_score.toFixed(2) : '—'} icon={Clock} color="amber" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

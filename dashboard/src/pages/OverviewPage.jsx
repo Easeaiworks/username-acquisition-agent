@@ -59,7 +59,7 @@ export default function OverviewPage() {
         />
         <StatCard
           label="Active Opportunities"
-          value={stats.active_opportunities ?? '—'}
+          value={stats.high_value_opportunities ?? '—'}
           sub="Score ≥ 0.5"
           icon={Target}
           color="green"
@@ -73,7 +73,7 @@ export default function OverviewPage() {
         />
         <StatCard
           label="Meetings Booked"
-          value={stats.meetings_booked ?? '—'}
+          value={stats.total_meetings_booked ?? '—'}
           sub="All time"
           icon={CheckSquare}
           color="purple"
@@ -84,7 +84,7 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           label="Pending Approvals"
-          value={stats.pending_approvals ?? '—'}
+          value={stats.pending_approval ?? '—'}
           icon={Clock}
           color="amber"
         />
@@ -96,7 +96,7 @@ export default function OverviewPage() {
         />
         <StatCard
           label="Response Rate"
-          value={stats.response_rate != null ? `${(stats.response_rate * 100).toFixed(1)}%` : '—'}
+          value={stats.reply_rate != null ? `${stats.reply_rate}%` : '—'}
           icon={Mail}
           color="green"
         />

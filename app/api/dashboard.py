@@ -72,6 +72,41 @@ async def dashboard_overview():
         .execute()
     )
 
+    # Active outreach sequences (sent but not yet replied/bounced)
+    outreach_active = (
+        db.table("outreach_sequences")
+        .select("id", count="exact")
+        .eq("status", "sent")
+        .execute()
+    )
+
+    # Average opportunity score
+    all_scores = (
+        db.table("companies")
+        .select("total_opportunity_score")
+        .gt("total_opportunity_score", 0)
+        .execute()
+    )
+    scores = [c["total_opportunity_score"] for c in (all_scores.data or []) if c.get("total_opportunity_score")]
+    avg_score = round(sum(scores) / len(scores), 3) if scores else 0
+
+    # Reply rate
+    total_sent = (
+        db.table("outreach_sequences")
+        .select("id", count="exact")
+        .in_("status", ["sent", "delivered", "opened", "clicked", "replied", "meeting_booked"])
+        .execute()
+    )
+    total_replied = (
+        db.table("outreach_sequences")
+        .select("id", count="exact")
+        .in_("status", ["replied", "meeting_booked"])
+        .execute()
+    )
+    sent_count = total_sent.count or 0
+    replied_count = total_replied.count or 0
+    reply_rate = round(replied_count / sent_count * 100, 1) if sent_count > 0 else 0
+
     return {
         "total_companies": total.count or 0,
         "pipeline_stages": stages,
@@ -80,6 +115,9 @@ async def dashboard_overview():
         "outreach_sent_today": today_outreach.count or 0,
         "total_meetings_booked": meetings.count or 0,
         "replies_today": today_replies.count or 0,
+        "outreach_active": outreach_active.count or 0,
+        "avg_score": avg_score,
+        "reply_rate": reply_rate,
     }
 
 
