@@ -31,7 +31,7 @@ export default function OpportunitiesPage() {
       render: (v) => <span className="capitalize">{v || '—'}</span>,
     },
     {
-      key: 'composite_score',
+      key: 'total_opportunity_score',
       label: 'Score',
       render: (v) => (
         <div className="flex items-center gap-2">

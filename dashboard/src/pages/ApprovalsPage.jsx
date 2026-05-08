@@ -31,7 +31,7 @@ function ApprovalCard({ item, type, onAction }) {
             </div>
             <p className="text-sm mt-0.5" style={{ color: '#6b7a99' }}>
               {type === 'company'
-                ? `Score: ${item.composite_score?.toFixed(2) || '—'} · ${item.industry || 'Unknown industry'}`
+                ? `Score: ${item.total_opportunity_score?.toFixed(2) || '—'} · ${item.industry || 'Unknown industry'}`
                 : `To: ${item.contact_name || '—'} · Step ${item.sequence_step || 1}/4`}
             </p>
           </div>

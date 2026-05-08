@@ -82,14 +82,14 @@ function CompanyDrawer({ companyId, onClose }) {
               </div>
             </div>
 
-            {company.composite_score != null && (
+            {company.total_opportunity_score != null && (
               <div className="rounded-lg p-4" style={{
                 background: 'linear-gradient(145deg, rgba(238,241,248,0.8), rgba(224,230,242,0.6))',
                 border: '1px solid rgba(91,126,194,0.1)',
               }}>
                 <p className="text-xs font-medium mb-2" style={{ color: '#6b7a99' }}>Scoring Breakdown</p>
                 <div className="text-2xl font-bold mb-3" style={{ color: '#1b2a4a' }}>
-                  {company.composite_score.toFixed(3)}
+                  {company.total_opportunity_score.toFixed(3)}
                 </div>
                 <div className="space-y-2 text-sm">
                   {[
@@ -151,11 +151,11 @@ export default function CompaniesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { page, limit: 50 };
-      if (filters.stage) params.stage = filters.stage;
+      const params = { page, page_size: 50 };
+      if (filters.stage) params.pipeline_stage = filters.stage;
       if (filters.search) params.search = filters.search;
       const data = await getCompanies(params);
-      setCompanies(Array.isArray(data) ? data : data.items || []);
+      setCompanies(Array.isArray(data) ? data : data.data || []);
     } catch (e) {
       console.error('Companies load error:', e);
     } finally {
@@ -171,7 +171,7 @@ export default function CompaniesPage() {
     { key: 'industry', label: 'Industry', render: (v) => <span className="capitalize">{v || '—'}</span> },
     { key: 'employee_range', label: 'Size', render: (v) => v || '—' },
     {
-      key: 'composite_score',
+      key: 'total_opportunity_score',
       label: 'Score',
       render: (v) => v != null ? <span className="font-mono" style={{ color: '#3a5289' }}>{v.toFixed(2)}</span> : '—',
     },
@@ -183,7 +183,7 @@ export default function CompaniesPage() {
     },
   ];
 
-  const STAGES = ['new', 'scanned', 'scored', 'enriched', 'qualified', 'approval_queue', 'outreach_active', 'meeting_booked', 'rejected', 'parked'];
+  const STAGES = ['discovered', 'scanned', 'scored', 'enriching', 'qualified', 'outreach', 'meeting', 'closed'];
 
   const inputStyle = {
     background: 'rgba(255,255,255,0.9)',

@@ -259,7 +259,7 @@ export default function ReportsPage() {
                   </div>
                 </div>
                 <div className="text-right px-2">
-                  <p className="font-mono text-sm font-medium" style={{ color: '#3a5289' }}>{opp.composite_score?.toFixed(3)}</p>
+                  <p className="font-mono text-sm font-medium" style={{ color: '#3a5289' }}>{opp.total_opportunity_score?.toFixed(3)}</p>
                   <p className="text-xs capitalize" style={{ color: '#9aa5bd' }}>{opp.priority_bucket?.replace(/_/g, ' ')}</p>
                 </div>
               </div>

@@ -35,7 +35,7 @@ export default function OutreachPage() {
           getPendingOutreach(),
         ]);
         if (s.status === 'fulfilled') setStats(s.value);
-        if (p.status === 'fulfilled') setPending(Array.isArray(p.value) ? p.value : p.value.items || []);
+        if (p.status === 'fulfilled') setPending(Array.isArray(p.value) ? p.value : p.value.data || p.value.items || []);
       } catch (e) {
         console.error('Outreach load error:', e);
       } finally {

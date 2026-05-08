@@ -110,7 +110,7 @@ export default function OverviewPage() {
             columns={[
               { key: 'brand_name', label: 'Company' },
               {
-                key: 'composite_score',
+                key: 'total_opportunity_score',
                 label: 'Score',
                 render: (v) => (
                   <span className="font-mono font-medium" style={{ color: '#3a5289' }}>{v != null ? v.toFixed(2) : '—'}</span>
