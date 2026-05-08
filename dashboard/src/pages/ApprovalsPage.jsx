@@ -128,7 +128,7 @@ export default function ApprovalsPage() {
     try {
       const data = await getApprovalQueue();
       setQueue({
-        companies: data.companies || [],
+        companies: data.data || data.companies || [],
         outreach: data.outreach || [],
       });
     } catch (e) {
