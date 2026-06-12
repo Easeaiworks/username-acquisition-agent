@@ -28,6 +28,7 @@ from pydantic import BaseModel, Field
 
 from app.config import settings
 from app.database import get_service_client
+from app.integrations.credentials import invalidate_cache as invalidate_credential_cache
 
 import structlog
 
@@ -496,7 +497,11 @@ async def update_integration(request: Request, integration_id: str, body: Integr
     if not result.data:
         raise HTTPException(status_code=500, detail="Failed to update integration")
 
-    logger.info("integration_updated", integration_id=integration_id)
+    # Clear credential cache so the new key takes effect immediately
+    service_name = result.data[0].get("service_name")
+    invalidate_credential_cache(service_name)
+
+    logger.info("integration_updated", integration_id=integration_id, service=service_name)
     return result.data[0]
 
 
@@ -548,6 +553,10 @@ async def disconnect_integration(request: Request, integration_id: str):
     if not existing.data:
         raise HTTPException(status_code=404, detail="Integration not found")
 
+    # Get service_name before clearing
+    svc = db.table("api_integrations").select("service_name").eq("id", integration_id).execute()
+    service_name = svc.data[0]["service_name"] if svc.data else None
+
     db.table("api_integrations").update({
         "api_key_encrypted": None,
         "is_connected": False,
@@ -556,7 +565,10 @@ async def disconnect_integration(request: Request, integration_id: str):
         "updated_at": _now_iso(),
     }).eq("id", integration_id).execute()
 
-    logger.info("integration_disconnected", integration_id=integration_id)
+    # Clear credential cache so the backend stops using the old key
+    invalidate_credential_cache(service_name)
+
+    logger.info("integration_disconnected", integration_id=integration_id, service=service_name)
     return {"status": "disconnected", "integration_id": integration_id}
 
 

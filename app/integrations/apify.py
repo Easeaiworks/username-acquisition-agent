@@ -25,6 +25,7 @@ import structlog
 
 from app.config import settings
 from app.integrations.rate_limiter import rate_limiter
+from app.integrations.credentials import get_credential
 
 logger = structlog.get_logger()
 
@@ -47,7 +48,8 @@ async def _run_actor(actor_id: str, input_data: dict, timeout_secs: int = 120) -
     Returns:
         Actor run results or None on failure
     """
-    if not settings.apify_api_token:
+    api_token = await get_credential("apify")
+    if not api_token:
         logger.warning("apify_api_token_not_configured")
         return None
 
@@ -58,7 +60,7 @@ async def _run_actor(actor_id: str, input_data: dict, timeout_secs: int = 120) -
             # Start the actor run
             resp = await client.post(
                 f"{APIFY_BASE_URL}/acts/{actor_id}/runs",
-                params={"token": settings.apify_api_token},
+                params={"token": api_token},
                 json=input_data,
                 timeout=30.0,
             )
@@ -85,7 +87,7 @@ async def _run_actor(actor_id: str, input_data: dict, timeout_secs: int = 120) -
 
                 status_resp = await client.get(
                     f"{APIFY_BASE_URL}/actor-runs/{run_id}",
-                    params={"token": settings.apify_api_token},
+                    params={"token": api_token},
                     timeout=15.0,
                 )
 
@@ -118,10 +120,12 @@ async def _get_dataset_items(dataset_id: str) -> Optional[list]:
     """Fetch results from an Apify dataset."""
     try:
         async with httpx.AsyncClient() as client:
+            # Re-resolve token (uses cache, effectively free)
+            api_token = await get_credential("apify")
             resp = await client.get(
                 f"{APIFY_BASE_URL}/datasets/{dataset_id}/items",
                 params={
-                    "token": settings.apify_api_token,
+                    "token": api_token or "",
                     "format": "json",
                     "limit": 10,
                 },

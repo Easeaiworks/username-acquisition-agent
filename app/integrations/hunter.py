@@ -19,6 +19,7 @@ import structlog
 
 from app.config import settings
 from app.integrations.rate_limiter import rate_limiter
+from app.integrations.credentials import get_credential
 
 logger = structlog.get_logger()
 
@@ -43,7 +44,8 @@ async def domain_search(
     Returns:
         List of email result dicts
     """
-    if not settings.hunter_api_key:
+    api_key = await get_credential("hunter")
+    if not api_key:
         logger.warning("hunter_api_key_not_set")
         return []
 
@@ -56,7 +58,7 @@ async def domain_search(
 
     params = {
         "domain": domain,
-        "api_key": settings.hunter_api_key,
+        "api_key": api_key,
         "limit": limit,
     }
     if department:
@@ -125,7 +127,8 @@ async def find_email(
     Returns:
         Email result dict or None
     """
-    if not settings.hunter_api_key:
+    api_key = await get_credential("hunter")
+    if not api_key:
         return None
 
     if not rate_limiter.check_daily_limit("hunter", settings.max_hunter_calls_per_month // 30):
@@ -138,7 +141,7 @@ async def find_email(
         "domain": domain,
         "first_name": first_name,
         "last_name": last_name,
-        "api_key": settings.hunter_api_key,
+        "api_key": api_key,
     }
 
     try:
@@ -194,7 +197,8 @@ async def verify_email(email: str) -> Optional[dict]:
     Returns:
         Verification result dict or None
     """
-    if not settings.hunter_api_key:
+    api_key = await get_credential("hunter")
+    if not api_key:
         return None
 
     await rate_limiter.acquire("hunter")
@@ -202,7 +206,7 @@ async def verify_email(email: str) -> Optional[dict]:
 
     params = {
         "email": email,
-        "api_key": settings.hunter_api_key,
+        "api_key": api_key,
     }
 
     try:

@@ -25,6 +25,7 @@ import structlog
 
 from app.config import settings
 from app.integrations.rate_limiter import rate_limiter
+from app.integrations.credentials import get_credential
 
 logger = structlog.get_logger()
 
@@ -41,7 +42,8 @@ async def lookup_channel_by_handle(handle: str) -> Optional[dict]:
     Returns:
         Channel data dict or None if not found
     """
-    if not settings.youtube_api_key:
+    api_key = await get_credential("youtube")
+    if not api_key:
         logger.warning("youtube_api_key_not_configured")
         return None
 
@@ -61,7 +63,7 @@ async def lookup_channel_by_handle(handle: str) -> Optional[dict]:
                 params={
                     "part": "snippet,statistics,brandingSettings",
                     "forHandle": clean_handle,
-                    "key": settings.youtube_api_key,
+                    "key": api_key,
                 },
                 timeout=15.0,
             )
@@ -99,7 +101,8 @@ async def search_channel_by_name(brand_name: str) -> Optional[dict]:
     Returns:
         Best matching channel data dict or None
     """
-    if not settings.youtube_api_key:
+    api_key = await get_credential("youtube")
+    if not api_key:
         return None
 
     # This costs 100 units — only use if we have budget
@@ -118,7 +121,7 @@ async def search_channel_by_name(brand_name: str) -> Optional[dict]:
                     "q": brand_name,
                     "type": "channel",
                     "maxResults": 3,
-                    "key": settings.youtube_api_key,
+                    "key": api_key,
                 },
                 timeout=15.0,
             )
@@ -140,6 +143,10 @@ async def search_channel_by_name(brand_name: str) -> Optional[dict]:
 
 async def _get_channel_by_id(channel_id: str) -> Optional[dict]:
     """Get full channel data by ID (1 quota unit)."""
+    api_key = await get_credential("youtube")
+    if not api_key:
+        return None
+
     await rate_limiter.acquire("youtube")
 
     try:
@@ -149,7 +156,7 @@ async def _get_channel_by_id(channel_id: str) -> Optional[dict]:
                 params={
                     "part": "snippet,statistics,brandingSettings",
                     "id": channel_id,
-                    "key": settings.youtube_api_key,
+                    "key": api_key,
                 },
                 timeout=15.0,
             )

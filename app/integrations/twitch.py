@@ -19,6 +19,7 @@ import structlog
 
 from app.config import settings
 from app.integrations.rate_limiter import rate_limiter
+from app.integrations.credentials import get_credential
 
 logger = structlog.get_logger()
 
@@ -34,7 +35,9 @@ async def _get_access_token() -> Optional[str]:
     """Get or refresh the Twitch app access token via Client Credentials flow."""
     global _access_token, _token_expires_at
 
-    if not settings.twitch_client_id or not settings.twitch_client_secret:
+    client_id = await get_credential("twitch", "client_id")
+    client_secret = await get_credential("twitch", "client_secret")
+    if not client_id or not client_secret:
         logger.warning("twitch_credentials_not_configured")
         return None
 
@@ -47,8 +50,8 @@ async def _get_access_token() -> Optional[str]:
             resp = await client.post(
                 TOKEN_URL,
                 params={
-                    "client_id": settings.twitch_client_id,
-                    "client_secret": settings.twitch_client_secret,
+                    "client_id": client_id,
+                    "client_secret": client_secret,
                     "grant_type": "client_credentials",
                 },
                 timeout=15.0,
@@ -101,7 +104,7 @@ async def lookup_user_by_login(login_name: str) -> Optional[dict]:
                 params={"login": clean_login},
                 headers={
                     "Authorization": f"Bearer {token}",
-                    "Client-Id": settings.twitch_client_id,
+                    "Client-Id": await get_credential("twitch", "client_id") or "",
                 },
                 timeout=15.0,
             )
@@ -167,7 +170,7 @@ async def get_channel_last_stream(user_id: str) -> Optional[dict]:
                 },
                 headers={
                     "Authorization": f"Bearer {token}",
-                    "Client-Id": settings.twitch_client_id,
+                    "Client-Id": await get_credential("twitch", "client_id") or "",
                 },
                 timeout=15.0,
             )

@@ -20,6 +20,7 @@ import structlog
 
 from app.config import settings
 from app.integrations.rate_limiter import rate_limiter
+from app.integrations.credentials import get_credential
 
 logger = structlog.get_logger()
 
@@ -53,10 +54,11 @@ TARGET_TITLES = [
 TARGET_DEPARTMENTS = ["marketing", "executive", "operations"]
 
 
-def _get_headers() -> dict:
+async def _get_headers() -> dict:
     """Build auth headers for RocketReach API."""
+    api_key = await get_credential("rocketreach")
     return {
-        "Api-Key": settings.rocketreach_api_key or "",
+        "Api-Key": api_key or "",
         "Content-Type": "application/json",
     }
 
@@ -79,7 +81,8 @@ async def search_contacts(
     Returns:
         List of contact dicts with name, title, email, linkedin, etc.
     """
-    if not settings.rocketreach_api_key:
+    api_key = await get_credential("rocketreach")
+    if not api_key:
         logger.warning("rocketreach_api_key_not_set")
         return []
 
@@ -107,7 +110,7 @@ async def search_contacts(
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.post(
                 f"{BASE_URL}/person/search",
-                headers=_get_headers(),
+                headers=await _get_headers(),
                 json={"query": query},
             )
 
@@ -164,7 +167,8 @@ async def lookup_person(
     Returns:
         Contact dict or None
     """
-    if not settings.rocketreach_api_key:
+    api_key = await get_credential("rocketreach")
+    if not api_key:
         return None
 
     if not rate_limiter.check_daily_limit("rocketreach", settings.max_rocketreach_calls_per_month // 30):
@@ -183,7 +187,7 @@ async def lookup_person(
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.get(
                 f"{BASE_URL}/person/lookup",
-                headers=_get_headers(),
+                headers=await _get_headers(),
                 params=params,
             )
 

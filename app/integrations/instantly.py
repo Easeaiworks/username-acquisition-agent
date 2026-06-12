@@ -27,6 +27,7 @@ import httpx
 import structlog
 
 from app.config import settings
+from app.integrations.credentials import get_credential
 
 logger = structlog.get_logger()
 
@@ -38,11 +39,17 @@ class InstantlyError(Exception):
     """Raised when the Instantly API returns a non-success response."""
 
 
-def _headers() -> dict[str, str]:
-    if not settings.instantly_api_key:
+async def _resolve_api_key() -> str:
+    """Resolve the Instantly API key from DB or env var."""
+    key = await get_credential("instantly")
+    if not key:
         raise InstantlyError("INSTANTLY_API_KEY is not configured")
+    return key
+
+
+def _headers_with_key(api_key: str) -> dict[str, str]:
     return {
-        "Authorization": f"Bearer {settings.instantly_api_key}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
@@ -56,8 +63,9 @@ async def _request(
     params: Optional[dict] = None,
 ) -> dict[str, Any]:
     url = f"{BASE_URL}{path}"
+    api_key = await _resolve_api_key()
     async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT) as client:
-        resp = await client.request(method, url, headers=_headers(), json=json, params=params)
+        resp = await client.request(method, url, headers=_headers_with_key(api_key), json=json, params=params)
 
     if resp.status_code >= 400:
         body = resp.text[:500]
@@ -201,7 +209,7 @@ async def send_outreach(
     Returns the provider response (which includes the lead id). Raises
     InstantlyError on configuration / API failure.
     """
-    campaign_id = campaign_id or settings.instantly_campaign_id
+    campaign_id = campaign_id or await get_credential("instantly", "campaign_id")
     if not campaign_id:
         raise InstantlyError(
             "INSTANTLY_CAMPAIGN_ID is not configured. Create a campaign in "
