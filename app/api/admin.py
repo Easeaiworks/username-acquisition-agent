@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
 from app.config import settings
 from app.database import get_service_client
@@ -69,13 +69,13 @@ MAX_UPLOAD_BYTES = settings.max_upload_size_mb * 1024 * 1024
 # --- Users ---
 
 class UserCreate(BaseModel):
-    email: EmailStr
+    email: str
     name: str = ""
     role: str = Field(default="viewer", pattern=r"^(super_admin|admin|viewer)$")
 
 
 class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     name: Optional[str] = None
     role: Optional[str] = Field(default=None, pattern=r"^(super_admin|admin|viewer)$")
     is_active: Optional[bool] = None
