@@ -47,6 +47,28 @@ async function request(path, options = {}) {
   return res.json();
 }
 
+// Auth
+export async function login(email, password) {
+  const url = `${BASE_URL}/api/auth/login`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    const err = await res.json().catch(() => ({ detail: 'Invalid credentials' }));
+    throw new Error(err.detail || 'Invalid email or password');
+  }
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || `Server error: ${res.status}`);
+  }
+
+  return res.json();  // { api_key, user_id, email, name, role }
+}
+
 // Dashboard
 export const getDashboardOverview = () => request('/api/dashboard/overview');
 export const getApprovalQueue = (page = 1) => request(`/api/dashboard/approval-queue?page=${page}`);

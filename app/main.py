@@ -26,6 +26,7 @@ from app.api.outreach import router as outreach_router
 from app.api.reports import router as reports_router
 from app.api.settings import router as settings_router
 from app.api.admin import router as admin_router
+from app.api.auth import router as auth_router
 
 import structlog
 
@@ -126,6 +127,7 @@ app.include_router(outreach_router)
 app.include_router(reports_router)
 app.include_router(settings_router)
 app.include_router(admin_router)
+app.include_router(auth_router)
 
 
 @app.get("/health")

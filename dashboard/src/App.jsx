@@ -67,10 +67,22 @@ function Dashboard() {
 }
 
 function AuthGate() {
-  const { isAuthenticated, setApiKey } = useAuth();
+  const { isAuthenticated, setApiKey, setUserRole } = useAuth();
+
+  function handleLoginSuccess(data) {
+    // data = { api_key, user_id, email, name, role }
+    if (data.role) {
+      setUserRole(data.role);
+    }
+  }
 
   if (!isAuthenticated) {
-    return <LoginPage onLogin={setApiKey} />;
+    return (
+      <LoginPage
+        onLogin={setApiKey}
+        onLoginSuccess={handleLoginSuccess}
+      />
+    );
   }
 
   return <Dashboard />;

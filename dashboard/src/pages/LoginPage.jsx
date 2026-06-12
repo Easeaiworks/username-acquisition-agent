@@ -1,44 +1,35 @@
 import { useState } from 'react';
-import { Shield, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react';
+import { Shield, Eye, EyeOff, AlertCircle, ArrowRight, Mail, Lock } from 'lucide-react';
+import { login } from '../lib/api';
 
-export default function LoginPage({ onLogin }) {
-  const [key, setKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
+export default function LoginPage({ onLogin, onLoginSuccess }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!key.trim()) return;
+    if (!email.trim() || !password.trim()) return;
 
     setLoading(true);
     setError('');
 
     try {
-      // Validate the key by hitting the health-adjacent system status endpoint
-      const res = await fetch('/api/settings/system/status', {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': key.trim(),
-        },
-      });
+      const data = await login(email.trim(), password);
 
-      if (res.status === 401 || res.status === 403) {
-        setError('Invalid API key. Check your DASHBOARD_API_KEY in Railway.');
-        setLoading(false);
-        return;
+      // data = { api_key, user_id, email, name, role }
+      // Store the API key for subsequent requests
+      onLogin(data.api_key);
+
+      // If the parent wants the full user info (for role, name, etc.)
+      if (onLoginSuccess) {
+        onLoginSuccess(data);
       }
-
-      if (!res.ok) {
-        setError(`Server error: ${res.status}`);
-        setLoading(false);
-        return;
-      }
-
-      // Key is valid — store it and proceed
-      onLogin(key.trim());
     } catch (err) {
-      setError('Could not connect to backend. Is the server running?');
+      setError(err.message || 'Login failed. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -60,19 +51,23 @@ export default function LoginPage({ onLogin }) {
 
         {/* Login Card */}
         <div className="rounded-2xl p-8 shadow-lg" style={{ background: 'white', border: '1px solid #e2e8f0' }}>
-          <h2 className="text-lg font-semibold mb-1" style={{ color: '#1e293b' }}>Dashboard Access</h2>
+          <h2 className="text-lg font-semibold mb-1" style={{ color: '#1e293b' }}>Sign In</h2>
           <p className="text-sm mb-6" style={{ color: '#64748b' }}>
-            Enter your Dashboard API key to continue. This is the <code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>DASHBOARD_API_KEY</code> set in Railway.
+            Enter your credentials to access the dashboard.
           </p>
 
           <form onSubmit={handleSubmit}>
+            {/* Email field */}
             <div className="relative mb-4">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#94a3b8' }}>
+                <Mail size={18} />
+              </div>
               <input
-                type={showKey ? 'text' : 'password'}
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-                placeholder="Enter your API key"
-                className="w-full px-4 py-3 pr-12 rounded-xl text-sm outline-none transition-all"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email address"
+                className="w-full pl-10 pr-4 py-3 rounded-xl text-sm outline-none transition-all"
                 style={{
                   background: '#f8fafc',
                   border: error ? '2px solid #ef4444' : '2px solid #e2e8f0',
@@ -81,15 +76,38 @@ export default function LoginPage({ onLogin }) {
                 onFocus={(e) => { if (!error) e.target.style.borderColor = '#2b5797'; }}
                 onBlur={(e) => { if (!error) e.target.style.borderColor = '#e2e8f0'; }}
                 autoFocus
+                autoComplete="email"
+              />
+            </div>
+
+            {/* Password field */}
+            <div className="relative mb-4">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#94a3b8' }}>
+                <Lock size={18} />
+              </div>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full pl-10 pr-12 py-3 rounded-xl text-sm outline-none transition-all"
+                style={{
+                  background: '#f8fafc',
+                  border: error ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                  color: '#1e293b',
+                }}
+                onFocus={(e) => { if (!error) e.target.style.borderColor = '#2b5797'; }}
+                onBlur={(e) => { if (!error) e.target.style.borderColor = '#e2e8f0'; }}
+                autoComplete="current-password"
               />
               <button
                 type="button"
-                onClick={() => setShowKey(!showKey)}
+                onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2"
                 style={{ color: '#94a3b8' }}
                 tabIndex={-1}
               >
-                {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
@@ -102,13 +120,13 @@ export default function LoginPage({ onLogin }) {
 
             <button
               type="submit"
-              disabled={loading || !key.trim()}
+              disabled={loading || !email.trim() || !password.trim()}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-white transition-all"
               style={{
-                background: loading || !key.trim()
+                background: loading || !email.trim() || !password.trim()
                   ? '#94a3b8'
                   : 'linear-gradient(135deg, #1e3a5f 0%, #2b5797 100%)',
-                cursor: loading || !key.trim() ? 'not-allowed' : 'pointer',
+                cursor: loading || !email.trim() || !password.trim() ? 'not-allowed' : 'pointer',
               }}
             >
               {loading ? (
@@ -117,7 +135,7 @@ export default function LoginPage({ onLogin }) {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Verifying...
+                  Signing in...
                 </>
               ) : (
                 <>
@@ -130,7 +148,7 @@ export default function LoginPage({ onLogin }) {
         </div>
 
         <p className="text-center text-xs mt-6" style={{ color: '#94a3b8' }}>
-          Secured with API key authentication
+          Secured with encrypted password authentication
         </p>
       </div>
     </div>
