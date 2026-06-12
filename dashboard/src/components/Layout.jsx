@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Building2, Target, Mail, CheckSquare, BarChart3, FileText, Settings, Menu, X, LogOut } from 'lucide-react';
+import { LayoutDashboard, Building2, Target, Mail, CheckSquare, BarChart3, FileText, Settings, Menu, X, LogOut, Key, Upload, Users, Shield } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 
 const NAV_ITEMS = [
@@ -13,9 +13,18 @@ const NAV_ITEMS = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
+const ADMIN_NAV_ITEMS = [
+  { id: 'admin-integrations', label: 'Integrations', icon: Key },
+  { id: 'admin-uploads', label: 'File Manager', icon: Upload },
+  { id: 'admin-templates', label: 'Templates', icon: Mail },
+  { id: 'admin-users', label: 'Users', icon: Users },
+];
+
 export default function Layout({ currentPage, onNavigate, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { logout } = useAuth();
+  const { logout, userRole } = useAuth();
+
+  const showAdmin = userRole === 'super_admin' || userRole === 'admin';
 
   return (
     <div className="flex h-screen" style={{ background: '#eef1f8' }}>
@@ -35,7 +44,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
           </button>
         </div>
 
-        <nav className="mt-4 px-3">
+        <nav className="mt-4 px-3 flex-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 10rem)' }}>
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -50,6 +59,33 @@ export default function Layout({ currentPage, onNavigate, children }) {
               {label}
             </button>
           ))}
+
+          {showAdmin && (
+            <>
+              <div className="mx-0 my-3 border-t" style={{ borderColor: 'rgba(91, 126, 194, 0.15)' }} />
+              <p className="px-3 text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#5b7ec2' }}>
+                <Shield size={12} className="inline mr-1.5 -mt-0.5" />
+                Admin
+              </p>
+              {ADMIN_NAV_ITEMS.filter(item => {
+                if (item.id === 'admin-users') return userRole === 'super_admin';
+                return true;
+              }).map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => { onNavigate(id); setSidebarOpen(false); }}
+                  className={`
+                    w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 nav-item
+                    ${currentPage === id ? 'nav-item-active text-white' : ''}
+                  `}
+                  style={currentPage !== id ? { color: '#a4b3d4' } : {}}
+                >
+                  <Icon size={18} />
+                  {label}
+                </button>
+              ))}
+            </>
+          )}
         </nav>
 
         <div className="absolute bottom-4 left-3 right-3 space-y-2">

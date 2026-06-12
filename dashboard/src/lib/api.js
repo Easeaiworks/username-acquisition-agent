@@ -96,3 +96,53 @@ export const getSystemStatus = () => request('/api/settings/system/status');
 export const updateSetting = (key, value) => request(`/api/settings/${key}`, { method: 'PUT', body: JSON.stringify({ value }) });
 export const testInstantly = () => request('/api/settings/instantly/test', { method: 'POST' });
 export const autoSetupInstantly = (apiKey, campaignName) => request('/api/settings/instantly/auto-setup', { method: 'POST', body: JSON.stringify({ api_key: apiKey, campaign_name: campaignName }) });
+
+// Admin — Users
+export const getAdminUsers = () => request('/api/admin/users');
+export const createAdminUser = (data) => request('/api/admin/users', { method: 'POST', body: JSON.stringify(data) });
+export const updateAdminUser = (id, data) => request(`/api/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteAdminUser = (id) => request(`/api/admin/users/${id}`, { method: 'DELETE' });
+export const regenerateUserKey = (id) => request(`/api/admin/users/${id}/regenerate-key`, { method: 'POST' });
+
+// Admin — Integrations
+export const getIntegrations = () => request('/api/admin/integrations');
+export const updateIntegration = (id, data) => request(`/api/admin/integrations/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const testIntegration = (id) => request(`/api/admin/integrations/${id}/test`, { method: 'POST' });
+export const disconnectIntegration = (id) => request(`/api/admin/integrations/${id}/disconnect`, { method: 'DELETE' });
+export const createIntegration = (data) => request('/api/admin/integrations', { method: 'POST', body: JSON.stringify(data) });
+
+// Admin — Uploads
+export const getUploads = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return request(`/api/admin/uploads?${qs}`);
+};
+export const deleteUpload = (id) => request(`/api/admin/uploads/${id}`, { method: 'DELETE' });
+export const getUploadPreview = (id) => request(`/api/admin/uploads/${id}/preview`);
+
+// For file upload — special handling (no Content-Type header, let browser set multipart boundary)
+export async function uploadFile(file, category, description = '') {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('category', category);
+  if (description) formData.append('description', description);
+
+  const apiKey = getApiKey();
+  const res = await fetch(`${BASE_URL}/api/admin/uploads`, {
+    method: 'POST',
+    headers: { 'X-API-Key': apiKey },
+    body: formData,
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(error.detail || `Upload failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+// Admin — Templates
+export const getTemplates = () => request('/api/admin/templates');
+export const createTemplate = (data) => request('/api/admin/templates', { method: 'POST', body: JSON.stringify(data) });
+export const updateTemplate = (id, data) => request(`/api/admin/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteTemplate = (id) => request(`/api/admin/templates/${id}`, { method: 'DELETE' });
+export const duplicateTemplate = (id) => request(`/api/admin/templates/${id}/duplicate`, { method: 'POST' });
+export const previewTemplate = (data) => request('/api/admin/templates/preview', { method: 'POST', body: JSON.stringify(data) });
