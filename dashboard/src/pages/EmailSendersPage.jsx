@@ -249,7 +249,7 @@ export default function EmailSendersPage() {
     setLoading(true);
     try {
       const data = await getEmailSenders();
-      setSenders(data.senders || data || []);
+      setSenders(data.data || data.senders || []);
     } catch (e) {
       setToast({ message: 'Failed to load senders', type: 'error' });
     } finally {

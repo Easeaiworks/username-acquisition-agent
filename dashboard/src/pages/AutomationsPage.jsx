@@ -437,7 +437,7 @@ export default function AutomationsPage() {
     setLoading(true);
     try {
       const data = await getWorkflows();
-      setWorkflows(data.workflows || data || []);
+      setWorkflows(data.data || data.workflows || []);
     } catch (e) {
       setToast({ message: 'Failed to load workflows', type: 'error' });
     } finally {

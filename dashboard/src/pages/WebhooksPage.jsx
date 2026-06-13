@@ -245,8 +245,8 @@ export default function WebhooksPage() {
         getWebhooks(),
         getWebhookEvents().catch(() => ({ events: [] })),
       ]);
-      setWebhooks(whData.webhooks || whData || []);
-      setAvailableEvents(evData.events || evData || []);
+      setWebhooks(whData.data || whData.webhooks || []);
+      setAvailableEvents(evData.data || evData.events || []);
     } catch (e) {
       setToast({ message: 'Failed to load webhooks', type: 'error' });
     } finally {
