@@ -72,7 +72,7 @@ def _resolve_value(db_value: Optional[str], env_value: Optional[str]) -> tuple[s
 # Read settings
 # ---------------------------------------------------------------------------
 
-@router.get("/")
+@router.get("")
 async def get_all_settings():
     """Get all client settings, merging DB values with env var fallbacks."""
     db = get_service_client()

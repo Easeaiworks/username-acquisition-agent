@@ -171,6 +171,13 @@ if DASHBOARD_DIR.exists():
     @app.get("/{full_path:path}")
     async def serve_spa(request: Request, full_path: str):
         """Catch-all: serve the React SPA for any non-API route."""
+        # Never serve SPA for API or tracking routes — return proper 404
+        if full_path.startswith("api/") or full_path.startswith("t/"):
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=404,
+                content={"detail": f"API endpoint not found: /{full_path}"},
+            )
         # Prevent path traversal
         safe_path = Path(full_path).name if full_path else ""
         file_path = DASHBOARD_DIR / safe_path

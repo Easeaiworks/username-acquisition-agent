@@ -61,7 +61,7 @@ class PreviewRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-@router.get("/")
+@router.get("")
 async def list_campaigns(
     request: Request,
     page: int = Query(default=1, ge=1),
@@ -111,7 +111,7 @@ async def get_campaign(campaign_id: str):
         raise HTTPException(status_code=500, detail="Failed to get campaign")
 
 
-@router.post("/", status_code=201)
+@router.post("", status_code=201)
 async def create_campaign(body: CampaignCreate, request: Request):
     """Create a new email campaign."""
     try:

@@ -47,7 +47,7 @@ class AddMembersRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-@router.get("/")
+@router.get("")
 async def list_lists(request: Request):
     """List all email lists with contact counts."""
     try:
@@ -78,7 +78,7 @@ async def get_list(list_id: str):
         raise HTTPException(status_code=500, detail="Failed to get list")
 
 
-@router.post("/", status_code=201)
+@router.post("", status_code=201)
 async def create_list(body: ListCreate, request: Request):
     """Create a new email list."""
     try:

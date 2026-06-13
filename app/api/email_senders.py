@@ -76,7 +76,7 @@ class SenderConfigUpdate(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-@router.get("/")
+@router.get("")
 async def list_senders():
     """List all sender configurations (sensitive fields masked)."""
     try:
@@ -107,7 +107,7 @@ async def get_sender(config_id: str):
         raise HTTPException(status_code=500, detail="Failed to get sender config")
 
 
-@router.post("/", status_code=201)
+@router.post("", status_code=201)
 async def create_sender(body: SenderConfigCreate):
     """Create a new sender configuration."""
     try:

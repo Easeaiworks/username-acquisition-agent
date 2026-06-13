@@ -63,7 +63,7 @@ def _sanitize_webhook(webhook: dict) -> dict:
 # CRUD
 # ---------------------------------------------------------------------------
 
-@router.get("/")
+@router.get("")
 async def list_webhooks():
     """List all webhook endpoints."""
     db = get_service_client()
@@ -146,7 +146,7 @@ async def get_webhook(webhook_id: str):
     return webhook
 
 
-@router.post("/")
+@router.post("")
 async def create_webhook(body: WebhookCreate):
     """Create a new webhook endpoint."""
     db = get_service_client()

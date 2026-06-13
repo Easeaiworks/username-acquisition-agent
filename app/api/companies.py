@@ -36,7 +36,7 @@ ALLOWED_SORT_FIELDS = frozenset({
 MAX_CSV_BYTES = 10 * 1024 * 1024
 
 
-@router.get("/", response_model=CompanyListResponse)
+@router.get("", response_model=CompanyListResponse)
 async def list_companies(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=200),
@@ -93,7 +93,7 @@ async def get_company(company_id: str):
     return Company(**result.data[0])
 
 
-@router.post("/", response_model=Company)
+@router.post("", response_model=Company)
 async def create_company(company: CompanyCreate):
     """Create a new company record."""
     db = get_service_client()

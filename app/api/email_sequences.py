@@ -80,7 +80,7 @@ class EnrollRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-@router.get("/")
+@router.get("")
 async def list_sequences(
     request: Request,
     page: int = Query(default=1, ge=1),
@@ -141,7 +141,7 @@ async def get_sequence(sequence_id: str):
         raise HTTPException(status_code=500, detail="Failed to get sequence")
 
 
-@router.post("/", status_code=201)
+@router.post("", status_code=201)
 async def create_sequence(body: SequenceCreate, request: Request):
     """Create a new email sequence."""
     try:
