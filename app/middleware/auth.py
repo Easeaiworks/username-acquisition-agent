@@ -49,6 +49,7 @@ PUBLIC_PATHS = frozenset({
 PUBLIC_PREFIXES = (
     "/assets/",
     "/favicon",
+    "/t/",  # email tracking endpoints (open pixel, click redirect, unsubscribe)
 )
 
 

@@ -41,6 +41,10 @@ pytest-httpx==0.35.0
 # --- Security ---
 bcrypt==4.2.1
 
+# --- Email ---
+aiosmtplib==3.0.1
+# boto3  # optional — only needed for AWS SES sender
+
 # --- Utilities ---
 python-dotenv==1.0.1
 tenacity==9.0.0

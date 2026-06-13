@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     instantly_campaign_id: Optional[str] = Field(default=None, alias="INSTANTLY_CAMPAIGN_ID")
     smartlead_api_key: Optional[str] = Field(default=None, alias="SMARTLEAD_API_KEY")
 
+    # --- Email Platform ---
+    app_url: Optional[str] = Field(default=None, alias="APP_URL")
+
     # --- Calendly ---
     calendly_api_key: Optional[str] = Field(default=None, alias="CALENDLY_API_KEY")
     calendly_event_url: Optional[str] = Field(default=None, alias="CALENDLY_EVENT_URL")

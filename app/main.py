@@ -27,6 +27,14 @@ from app.api.reports import router as reports_router
 from app.api.settings import router as settings_router
 from app.api.admin import router as admin_router
 from app.api.auth import router as auth_router
+from app.api.email_contacts import router as email_contacts_router
+from app.api.email_lists import router as email_lists_router
+from app.api.email_campaigns import router as email_campaigns_router
+from app.api.email_tracking import router as email_tracking_router
+from app.api.email_sequences import router as email_sequences_router
+from app.api.email_senders import router as email_senders_router
+from app.api.automations import router as automations_router
+from app.api.webhooks import router as webhooks_router
 
 import structlog
 
@@ -128,6 +136,18 @@ app.include_router(reports_router)
 app.include_router(settings_router)
 app.include_router(admin_router)
 app.include_router(auth_router)
+
+# Email marketing platform routes
+app.include_router(email_contacts_router)
+app.include_router(email_lists_router)
+app.include_router(email_campaigns_router)
+app.include_router(email_tracking_router)
+app.include_router(email_sequences_router)
+app.include_router(email_senders_router)
+
+# Automation engine routes
+app.include_router(automations_router)
+app.include_router(webhooks_router)
 
 
 @app.get("/health")

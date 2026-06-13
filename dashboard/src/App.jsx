@@ -14,6 +14,12 @@ import AdminIntegrationsPage from './pages/AdminIntegrationsPage';
 import AdminUploadsPage from './pages/AdminUploadsPage';
 import AdminTemplatesPage from './pages/AdminTemplatesPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import EmailContactsPage from './pages/EmailContactsPage';
+import EmailCampaignsPage from './pages/EmailCampaignsPage';
+import EmailSequencesPage from './pages/EmailSequencesPage';
+import EmailSendersPage from './pages/EmailSendersPage';
+import AutomationsPage from './pages/AutomationsPage';
+import WebhooksPage from './pages/WebhooksPage';
 import { getIntegrations, getAdminUsers } from './lib/api';
 
 const PAGES = {
@@ -29,6 +35,12 @@ const PAGES = {
   'admin-uploads': AdminUploadsPage,
   'admin-templates': AdminTemplatesPage,
   'admin-users': AdminUsersPage,
+  'email-contacts': EmailContactsPage,
+  'email-campaigns': EmailCampaignsPage,
+  'email-sequences': EmailSequencesPage,
+  'email-senders': EmailSendersPage,
+  'admin-automations': AutomationsPage,
+  'admin-webhooks': WebhooksPage,
 };
 
 function Dashboard() {
