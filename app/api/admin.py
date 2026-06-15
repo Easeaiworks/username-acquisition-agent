@@ -73,6 +73,7 @@ class UserCreate(BaseModel):
     email: str
     name: str = ""
     role: str = Field(default="viewer", pattern=r"^(super_admin|admin|viewer)$")
+    password: Optional[str] = None  # If provided, enables email+password login
 
 
 class UserUpdate(BaseModel):
@@ -283,7 +284,7 @@ async def create_user(request: Request, body: UserCreate):
     now = _now_iso()
 
     new_user = {
-        "email": body.email,
+        "email": body.email.lower().strip(),
         "name": body.name,
         "role": body.role,
         "api_key": api_key,
@@ -291,6 +292,11 @@ async def create_user(request: Request, body: UserCreate):
         "created_at": now,
         "updated_at": now,
     }
+
+    # Hash password if provided (enables email+password login)
+    if body.password:
+        from app.api.auth import hash_password
+        new_user["password_hash"] = hash_password(body.password)
 
     result = db.table("admin_users").insert(new_user).execute()
 

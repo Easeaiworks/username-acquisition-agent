@@ -129,3 +129,63 @@ async def login(body: LoginRequest):
         name=user.get("name", ""),
         role=user["role"],
     )
+
+
+# ---------------------------------------------------------------------------
+# Seed — create the first admin user (only works when no users exist)
+# ---------------------------------------------------------------------------
+
+class SeedRequest(BaseModel):
+    email: str
+    password: str
+    name: str = "Admin"
+
+
+@router.post("/seed")
+async def seed_admin(body: SeedRequest):
+    """
+    Create the very first admin user.
+
+    This endpoint ONLY works when the admin_users table is empty.
+    Once any user exists, it returns 403 — preventing abuse.
+    """
+    db = get_service_client()
+
+    # Safety check: refuse if any users already exist
+    existing = db.table("admin_users").select("id").limit(1).execute()
+    if existing.data:
+        raise HTTPException(
+            status_code=403,
+            detail="Admin user already exists. Use the admin panel to create more users.",
+        )
+
+    api_key = secrets.token_urlsafe(32)
+    now = datetime.now(timezone.utc).isoformat()
+
+    new_user = {
+        "email": body.email.lower().strip(),
+        "name": body.name,
+        "role": "super_admin",
+        "api_key": api_key,
+        "password_hash": hash_password(body.password),
+        "is_active": True,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    result = db.table("admin_users").insert(new_user).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Failed to create admin user")
+
+    created = result.data[0]
+    logger.info("admin_seed_complete", email=body.email)
+
+    return {
+        "status": "seeded",
+        "user_id": created["id"],
+        "email": created["email"],
+        "name": created.get("name", ""),
+        "role": "super_admin",
+        "message": "Admin user created. You can now log in at the dashboard.",
+    }
