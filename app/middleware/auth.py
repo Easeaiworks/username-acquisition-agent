@@ -43,6 +43,7 @@ PUBLIC_PATHS = frozenset({
     "/openapi.json",
     "/redoc",
     "/api/auth/login",
+    "/api/auth/seed",  # Only works when no users exist (self-guarded)
 })
 
 # Paths that start with these prefixes are public
